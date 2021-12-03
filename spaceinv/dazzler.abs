@@ -1,0 +1,25 @@
+STACK   .equ    0x4000
+DAZTAB	.equ	0x4000
+DAZTB1	.equ	DAZTAB+0x100
+RANTAB  .equ    DAZTB1+0x100
+SC1	.equ	0x4800
+SC2	.equ	SC1+2048
+TUARTA  .equ    0
+TDATA   .equ    1
+TIMERS  .equ    5
+TMPORT  .equ    10
+BUTTNP	.equ	(1<<2)  ; Retro Console B 
+BUTTNF	.equ	(1<<5)  ; Retro Console R1/RB
+BUTTNL	.equ	(1<<4)  ; Retro Console L1/LB
+BUTTNR	.equ	(1)     ; Retro Console X
+TUARTA_CMD      .equ TUARTA+2
+TUARTA_MASK     .equ TUARTA+3
+TIMERA_1        .equ TUARTA+TIMERS
+TIMERA_2        .equ TIMERA_1+1
+TIMERA_3        .equ TIMERA_2+1
+TIMERA_4        .equ TIMERA_3+1
+TIMERA_5        .equ TIMERA_4+1
+XPLO_TIMER      .equ TIMERA_2
+SHH_TIMER       .equ TIMERA_4   ; Disable during debugging
+DAZZ_COLOR      .equ 0xf
+DAZZ_ADDR       .equ 0xe

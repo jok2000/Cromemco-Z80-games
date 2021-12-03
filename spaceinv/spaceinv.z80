@@ -1,0 +1,2991 @@
+	TITLE	SPACE INVADERS
+	LIST	ON,NOCOND,NOGEN
+	NAME	SPACEINV
+TORG	EQU	1100H
+BUTTNP  EQU     4
+BUTTNF  EQU     1
+BUTTNL  EQU     16
+BUTTNR  EQU     32
+TUARTA  EQU     0
+TDATA   EQU     1
+GET	MACRO	#1
+	LD	A,0
+#1	EQU	$-1
+	MEND
+INCM    MACRO   #1
+        LD      A,#1
+        INC     A
+        LD      #1,A
+        MEND
+SHIFT	MACRO	#4,#5
+	R#4CA
+SHIF1	DL	#5-1
+	IF	SHIF1	NE	0
+	R#4CA
+SHIF1	DL	SHIF1-1
+	ENDIF
+	IF	SHIF1	NE	0
+	R#4CA
+SHIF1	DL	SHIF1-1
+	ENDIF
+	IF	SHIF1	NE	0
+	R#4CA
+	ENDIF
+	MEND        
+MOV	MACRO	#6,#7
+	LD	A,#7
+	LD	#6,A
+	MEND
+LOOPB   MACRO   #1,#2
+        MOV     (#1),0
+        LD      A,0
+#1      EQU     $-1
+#1L     CP      #2
+        JP      Z,#1X
+        MEND
+ENDLPB  MACRO   #1
+        INCM    (#1)
+        JP      #1L
+#1X     EQU     $
+        MEND
+OUTP    MACRO   #6,#7
+        LD      A,#7
+        OUT     #6,A
+        MEND
+ORMEM   MACRO   #1
+        LD      A,(IX+#1)
+        OR      (HL)
+        LD      (HL),A
+        MEND
+ANDMEM  MACRO   #1
+        LD      A,(IX+#1)
+        CPL
+        AND     (HL)
+        LD      (HL),A
+        MEND
+BLTBYT  MACRO   #1,#2
+        #1      #2
+        INC     HL
+        LD      A,15
+        AND     L
+        JR      NZ,$+6 ; Crossed over to a right quadrant
+        LD      DE,2*256-16
+        ADD     HL,DE
+        MEND
+BLTLIN  MACRO   #1,#2
+        BIT     6,C
+        JR      Z,$+4
+        SET     2,H
+        RES     1,H
+        BIT     6,B
+        JR      Z,$+4
+        SET     1,H
+        BLTBYT  #1,#2
+        BLTBYT  #1,#2+1
+        #1      #2+2
+        INC     C
+        INC     C
+        LD      DE,16-2
+        ADD     HL,DE
+        LD      A,15
+        AND     L
+        CP      14      ; 14,15 are in a left quadrant
+        JR      C,$+6
+        LD      DE,0FE10H ; -2, 16
+        ADD     HL,DE
+        MEND
+BLT     MACRO   #1
+        BLTLIN  #1,0
+        BLTLIN  #1,3
+        BLTLIN  #1,6
+        BLTLIN  #1,9
+        MEND
+; 0008 (Photo file 0008.jpg)
+PUT	MACRO	#4
+	LD	A,#4
+	CALL	PNUM
+	MEND
+COLOR	MACRO	#1
+	MOV	(ONOFF),#1
+	MEND
+	ORG	2000H-14
+SHIFT	LD	DE,2000H+PROG-DAZTAB-1
+	LD	HL,10EH+PROG-DAZTAB-1
+	LD	BC,PROG-DAZTAB
+        LDDR
+	JP	STARTA
+XLEN	EQU	80
+DAZTAB	DB	1,4,2,8,10H,40H,20H,80H
+XY	PUSH	BC
+	EXX
+	POP	BC
+	LD	A,SC1/256
+SC	EQU	$-1
+	BIT	6,B
+	JR	Z,XY1
+	ADD	A,2
+XY1	BIT	6,C
+	JR	Z,XY2
+	ADD	A,4
+XY2	LD	H,A
+	LD	A,3CH
+	AND	B
+	RRCA
+	RRCA
+	LD	L,A
+	LD	A,3EH
+	AND	C
+	RLCA
+	RLCA
+	ADD	A,A
+	JR	NC,XY4
+	INC	H
+XY4	OR	L
+	LD	L,A
+	LD	A,3
+	AND	B
+	RRC	C
+	RLA
+	LD	C,A
+	LD	B,DAZTAB/256
+	LD	A,(BC)
+	JR	XY
+ONOFF	EQU	$-1
+; 0058
+XYP	MACRO	#1
+	#1	(HL)
+	LD	(HL),A
+	LD	A,8
+	ADD	A,H
+	LD	H,A
+	LD	A,B
+	MEND
+XYL	MACRO	#2
+	#2	(HL)
+	LD	(HL),A
+	EXX
+	RET
+	MEND
+BLACK	EQU	$-ONOFF-1
+	CPL
+; 0074
+	LD	B,A
+	XYP	AND
+	XYL	AND
+RED	EQU	$-ONOFF-1
+	LD	B,A
+	XYP	OR
+	CPL
+	XYL	AND
+BLUE	EQU	$-ONOFF-1
+	LD	B,A
+	CPL
+	XYP	AND
+	XYL	OR
+WHITE	EQU	$-ONOFF-1
+	LD	B,A
+	XYP	OR
+	XYL	OR
+TEST	EQU	$-ONOFF-1
+; 0132
+	LD	C,A
+	AND	(HL)
+	ADD	A,0FFH
+	LD	A,0
+	RLA
+	LD	B,A
+	LD	A,8
+	ADD	A,H
+        LD      H,A
+	LD	A,C
+	AND	(HL)
+	ADD	A,0FFH
+	LD	A,B
+	RLA
+	AND	A
+        EXX
+	RET
+        ORG     ($/256+1)*256
+DAZTB1  DB      1, 1 SHL 1, 1 SHL 4, 1 SHL 5, 1 SHL 2, 1 SHL 3, 1 SHL 6, 1 SHL 7 ; Official Dazzler memory layout (x+y*4)        
+
+; draw the player (base)       
+LB	PUSH	BC
+	LD	D,7
+	CALL	LINEH
+	POP	BC
+	DEC	C
+	PUSH	BC
+	LD	D,7
+	CALL	LINEH
+	POP	BC
+	DEC	C
+	PUSH	BC
+	LD	D,7
+	CALL	LINEH
+	POP	BC
+	DEC	C
+	INC	B
+	INC	B
+	CALL	XY
+	INC	B
+	CALL	XY
+	INC	B
+	CALL	XY
+	DEC	B
+	DEC	C
+	CALL	XY
+	RET
+LINEH	CALL	XY
+	INC	B
+	DEC	D
+	JP	NZ,LINEH
+	RET
+; Draw a fort
+FORT	PUSH	BC
+; 0189
+	COLOR	BLUE
+	LD	E,12
+FORT1	LD	H,B
+	LD	D,12
+	CALL	LINEH
+	LD	B,H
+	DEC	C
+	DEC	E
+	JP	NZ,FORT1
+	POP	BC
+	INC	B
+	INC	B
+	INC	B
+	INC	B
+	COLOR	BLACK
+	LD	E,4
+	LD	H,B
+FORT2	LD	D,4
+	CALL	LINEH
+	LD	B,H
+	DEC	C
+	DEC	E
+	JR	NZ,FORT2
+	INC	B
+	CALL	XY
+	INC	B
+	CALL	XY
+	INC	B
+	INC	B
+	INC	B
+	LD	A,-7
+	ADD	A,C
+	LD	C,A
+	CALL	XY
+	INC	B
+	CALL	XY
+	INC	B
+	CALL	XY
+	INC	C
+	CALL	XY
+	DEC	B
+	CALL	XY
+	INC	C
+	CALL	XY
+	INC	B
+	CALL	XY
+	INC	C
+        CALL    XY ; LOST CODE RECOVERED shape of fort recovered visually
+        INC     C  ; LOST CODE RECOVERED shape of fort
+	CALL	XY
+	LD	A,-11
+	ADD	A,B
+	LD	B,A
+	CALL	XY
+	DEC	C
+	CALL	XY
+	DEC	C
+	CALL	XY
+	INC	B
+	CALL	XY
+	DEC	C
+	CALL	XY
+	DEC	B
+	CALL	XY
+	DEC	C
+	CALL	XY
+	INC	B
+	CALL	XY
+	INC	B
+	CALL	XY
+	RET
+STARTA	XOR	A
+	LD	(SCORE),A
+	LD	(SCORE+1),A
+	CALL	HIGHZ
+	MOV	(SCR1),81H
+	MOV	(SCR2),85H
+        CALL    MKZERO
+START	LD	A,SC1/512+80H
+	OUT	14,A
+	XOR	A
+	OUT	34H,A
+	LD	HL,100H
+RSET	CALL	RAND
+	LD	(HL),A
+	INC	L
+	JR	NZ,RSET
+	LD	A,7EH
+	OUT	15,A
+; 0286
+	XOR	A
+	OUT	3,A
+	CALL	CLEAR
+	COLOR	RED
+	LD	BC,24*256+30
+	LD	HL,SINVAD
+	CALL	MESOUT
+	LD	BC,21*256+12
+	LD	HL,SMES
+	CALL	MESOUT
+	CALL	WS
+	LD	BC,36*256+54
+	LD	HL,MEND1
+        CALL    MESOUT
+	LD	BC,36*256+61
+	LD	HL,MEND2
+	CALL	MESOUT
+	LD	BC,36*256+68
+	LD	HL,MEND3
+	CALL	MESOUT
+	LD	BC,36*256+75
+	LD	HL,MEND4
+	CALL	MESOUT
+	LD	BC,24*256+102
+	LD	HL,P4
+	CALL	MESOUT
+	LD	BC,12*256+114
+	LD	HL,P1
+	CALL	MESOUT
+	LD	BC,12*256+120
+	LD	HL,P2
+	CALL	MESOUT
+	JP	WAIT
+MESOUT	LD	A,(HL)
+	CP	255
+	RET	Z
+	PUSH	HL
+	CALL	PNUM
+	POP	HL
+	INC	HL
+	JP	MESOUT
+SINVAD	DB	01DH,01AH,0BH,0DH,0FH,0AH,13H,18H,20H,0BH,0EH,0FH,1CH,1DH,0FFH
+SMES	DB	1AH,1CH,0FH,1DH,1DH,0AH,03H,0AH,1EH,19H,0AH,1DH,1EH,0BH,1CH,1EH,0FFH ; PRESS 3 TO START
+MEND1	DB	27H,26H,03H,00H,0AH,1AH,19H,13H,18H,1EH,1DH,0FFH        ; <triangle invader>=30 POINTS
+MEND2	DB	28H,26H,3,0,0AH,1AH,19H,13H,18H,1EH,1DH,0FFH            ; <bubble invader>=30 POINTS
+MEND3	DB	29H,26H,2,0,0AH,1AH,19H,13H,18H,1EH,1DH,0FFH            ; <armed invader>=20 POINTS
+MEND4	DB	2AH,26H,01,0,0AH,1AH,19H,13H,18H,1EH,1DH,0FFH           ; <skeleton invader>=10 POINTS
+P1	DB	26,28,15,29,29,10,1,10,30,25,10,11H,19H,0AH,16H,0FH,10H,1EH,0FFH ; PRESS 1 TO GO LEFT
+P4	DB	1AH,1CH,0FH,1DH,1DH,0AH,4,0AH,1EH,19H,0AH,10H,13H,1CH,0FH,0FFH ; PRESS 4 TO FIRE
+P2	DB	1AH,1CH,0FH,1DH,1DH,0AH,2,0AH,1EH,19H,0AH,11H,19H,0AH,1CH,13H,11H,12H,1EH,0FFH ; PRESS 2 TO GO RIGHT
+HSCOM	DB	12H,13H,11H,12H,0AH,1DH,0DH,19H,1CH,0FH,1DH,0FFH        ; HIGH SCORES
+WAIT	LD	HL,0
+	CALL	WAITL
+	CALL	CLEAR
+	LD	A,7FH
+	OUT	0FH,A
+	LD	BC,31*256+5
+	LD	HL,HSCOM
+	COLOR	WHITE
+	CALL	MESOUT
+	LD	BC,13+5*256
+	MOV	(LLEFT),20      ; 20 LINES
+	LD	HL,INVDAT
+WAIT3	MOV	(CLEFT),14      ; 14 CHARACTERS NAME
+WAIT4	LD	A,(HL)
+	INC	HL
+	PUSH	HL
+	CALL	PNUM
+	POP	HL
+	LD	A,0
+CLEFT	EQU	$-1
+; 0368
+	DEC	A
+	LD	(CLEFT),A
+	JR	NZ,WAIT4
+	PUSH	HL
+	PUT	10
+	PUT	10              ; 2 SPACES
+        
+        
+	POP	HL
+	XOR	A
+	RLD                     ; GET FIRST NYBBLE FROM (HL)
+	PUSH	HL
+	PUSH	AF
+	CALL	PNUM
+	POP	AF
+	POP	HL
+	RLD
+	PUSH	HL
+	PUSH	AF
+	CALL	PNUM
+	POP	AF
+	POP	HL
+	RLD
+	INC	HL
+	RLD
+	PUSH	HL
+	PUSH	AF
+	CALL	PNUM
+	POP	AF
+	POP	HL
+	RLD
+	PUSH	HL
+	PUSH	AF
+	CALL	PNUM            ; 4 DIGIT SCORE
+	XOR	A
+	CALL	PNUM            ; PRINT OUT A 0 FOR FIFTH DIGIT
+	POP	AF
+	POP	HL
+	RLD
+	INC	HL
+	LD	B,5             ; ADVANCE SCREEN POSITION TO X=5, Y=C+6
+	LD	A,6
+	ADD	A,C
+	LD	C,A
+	LD	A,0
+LLEFT	EQU	$-1
+	DEC	A
+	LD	(LLEFT),A
+	JP	NZ,WAIT3
+	LD	HL,0
+WAITI	CALL	WAITL
+	JP	START
+WAITL	LD	B,6
+WAITL1	LD	HL,0
+WAITL2	IN	A,18H
+; 0425
+	AND	BUTTNP
+	JR	Z,WAITO
+	DEC	HL
+	LD	A,H
+	OR	L
+	JR	NZ,WAITL2
+	DJNZ	WAITL1
+	RET
+WAITO	MOV	(SET),-1
+	LD	(LEV),A
+	MOV	(LBASES),3
+	MOV	(BBASES),1
+	LD	HL,0
+	LD	(SCORE),HL
+	XOR	A
+	LD	(SETDIS),A
+START1	LD	HL,0
+	MOV	(SWH1),7FH
+        
+        
+	XOR	A
+	LD	(DROPW),A
+	LD	(SHIP),A
+	LD	(SHIPOC),A
+	LD	(DALIEN),A
+	INC	A
+	LD	(SLEN),A
+	LD	(SHIPE),A
+STLOP	DEC	HL
+	LD	A,L
+	OR	H
+	JP	NZ,STLOP
+	XOR	A
+	LD	(SPCC),A
+	LD	(SD),A
+        MOV     (SD),2
+	
+        
+	CALL	CLEAR
+	LD	A,(LEV)
+	INC	A
+	CP	9
+	JR	NZ,OKL
+	LD	A,1
+OKL	LD	(LEV),A
+	LD	A,(SET)
+	INC	A
+	CP	17
+	JP	NZ,OKS
+	LD	A,9
+OKS	LD	(SET),A
+	LD	A,0
+; 0482
+SETDIS	EQU	$-1
+	INC	A
+	DAA
+	LD	(SETDIS),A
+	XOR	A
+	LD	(SINC),A
+	CALL	SCR
+	LD	HL,LEVD
+	MOV	E,(LEV)
+	LD	D,0
+	ADD	HL,DE
+	LD	E,(HL)
+	LD	D,0
+	LD	HL,LEVD1
+	ADD	HL,DE
+	MOV	(LEVP),(HL)
+	SUB	50
+	LD	(LEVP1),A
+	MOV	E,(SET)
+	LD	D,0
+	LD	HL,SETD1
+	ADD	HL,DE
+	LD	E,(HL)
+	LD	D,0
+	LD	HL,0
+	ADD	HL,DE
+	ADD	HL,HL
+	ADD	HL,HL
+	ADD	HL,HL
+	ADD	HL,DE
+	ADD	HL,DE
+	ADD	HL,DE
+        LD      D,H
+        LD      E,L
+        ADD     HL,HL
+        ADD     HL,HL
+        ADD     HL,DE
+	LD	DE,SETD
+	ADD	HL,DE
+	LD	(SETP),HL
+	LD	SP,1300H
+	IM	0
+	LD	C,107
+LEVP	EQU	$-1
+	LD	HL,ROW1
+SET1	LD	B,110
+SET2	XOR	A
+	LD	(HL),A
+	INC	HL
+	LD	(HL),B
+; 0539
+	INC	HL
+	LD	(HL),C
+	INC	HL
+        LD      A,-8
+	ADD	A,B
+	LD	B,A
+	CP	22
+	JP	NZ,SET2
+	LD	A,-10
+	ADD	C
+	LD	C,A
+	CP	57
+LEVP1	EQU	$-1
+	JP	NZ,SET1
+	XOR	A
+	LD	(MIS),A
+	LD	(MIS1),A
+	LD	(MPOS),A
+	LD	HL,ROW1
+	LD	DE,0
+SETP	EQU	$-2
+	LD	B,55
+STY1	MOV	(HL),(DE)
+	INC	DE
+	INC	HL
+	INC	HL
+	INC	HL
+	DJNZ	STY1
+	MOV	(RP),10
+	LD	(OP),A
+	XOR	A
+	LD	(DOWNP),A
+	MOV	(CM),54
+	XOR	A
+	LD	(COUNT),A
+	LD	A,0C3H
+	LD	(0),A
+	LD	(8),A
+	LD	(18H),A
+	LD	(30H),A
+	LD	(38H),A
+	LD	HL,INTER1
+	LD	(1),HL
+	LD	HL,INT2
+	LD	(9),HL
+	LD	HL,DAZTRK
+	LD	(19H),HL
+	LD	HL,INT4
+; JOK temporary hack, can't use these and the debugger at the same time
+	LD	(31H),HL
+	LD	HL,SWHOOP
+	LD	(39H),HL
+; 0596
+	LD	A,0CBH
+	OUT	3,A
+	LD	A,8
+	OUT	2,A
+	EI
+	LD	A,62
+	OUT	7,A
+        CALL    DAZMOD
+	LD	A,100
+	OUT	5,A
+	LD	A,255
+	OUT	8,A
+	OUT	9,A
+	MOV	(BOM),-1
+	LD	BC,119+19*256
+	CALL	FORT
+	LD	BC,119+45*256
+	CALL	FORT
+	LD	BC,119+70*256
+	CALL	FORT
+	LD	BC,119+94*256
+	CALL	FORT
+	LD	BC,5+97*256
+	COLOR	BLUE
+	PUT	(LBASES)
+	MOV	D,(LBASES)
+	LD	HL,BASESX
+BPO1	LD	C,5
+	LD	B,(HL)
+	INC	HL
+        DEC     D
+	JR	Z,BPO2
+	PUSH	HL
+	PUSH	DE
+	CALL	LB
+	POP	DE
+	POP	HL
+	JR	BPO1
+BPO2	COLOR	BLACK
+	LD	BC,113+27*256
+	LD	A,(SETDIS)
+	AND	0FH
+	LD	(STD1),A
+	CALL	PNUM
+	LD	BC,113+53*256
+	LD	A,0
+; 0653
+STD1	EQU	$-1
+	CALL	PNUM
+	LD	BC,113+78*256
+	PUT	(STD1)
+	LD	BC,113+102*256
+	PUT	(STD1)
+	MOV	(DIREC),2
+LOOPB	MOV	(DIRECR),(DIREC)
+	COLOR	BLACK
+	LD	BC,7
+LOOPB1:	CALL	XY
+	INC	B
+	JP	P,LOOPB1
+	LD	B,0
+	INC	C
+	LD	A,107
+	CP	C
+	JR	NZ,LOOPB1
+	LD	B,55
+	LD	HL,ROW1
+        LD      DE,ROW1A
+INV1	MOV	(DE),(HL)
+	INC	HL
+	INC	DE
+	MOV	(DE),(HL)
+	INC	HL
+	INC	DE
+	LD	A,(HL)
+	SUB	126
+	LD	(DE),A
+	INC	HL
+	INC	DE
+	DJNZ	INV1
+INV2	LD	B,55            ; 55 invaders
+	LD	HL,ROW1A+2
+	LD	A,(ROW1+2)
+	CP	(HL)
+	JP	Z,LOOPZ
+	DEC	HL
+	DEC	HL
+	MOV	(DOWN),3
+; 0710 / 0711
+	XOR	A
+	LD	(DIREC),A
+INV3	LD	D,(HL)
+	INC	HL
+	PUSH	BC
+	LD	B,(HL)
+	INC	HL
+	INC	(HL)
+	INC	(HL)
+	INC	(HL)
+	LD	C,(HL)
+	INC	HL
+	LD	A,C
+	AND	A
+	JP	M,INV4  ; -ve, no one there
+	CP	15      ; 15 = blinked off
+	JP	C,INV4
+	LD	A,D
+	AND	A
+	JR	Z,INV4
+	CP	5
+	JP	NC,INV4
+	PUSH	DE
+	PUSH	HL
+	CALL	MD      ; draw one invader
+	POP	HL
+	POP	DE
+INV4	POP	BC
+	DJNZ	INV3
+	LD	A,(PHASE)
+	INC	A
+	LD	(PHASE),A
+	MOV     (DUR),20
+	JP	INV2
+LOOPZ	XOR	A
+	LD	(DOWN),A
+	LD	A,2
+DIRECR:	EQU	$-1
+	LD	(DIREC),A
+LOOP	LD	A,0
+COUNTR	EQU	$-1
+	INC	A
+	LD	(COUNTR),A
+	AND	3
+	CALL	Z,INT1
+	LD	A,0
+IBOMBC	EQU	$-1
+	INC	A
+	LD	(IBOMBC),A
+	CP	5
+	JP	NZ,IBOMBL
+	XOR	A
+	LD	(IBOMBC),A
+	CALL	IBOMB
+; 0767
+IBOMBL	COLOR	BLACK
+	LD	A,0
+AFMATH	EQU	$-1
+	AND	A
+	JP	Z,AFMTH1
+	DEC	A
+	LD	(AFMATH),A
+	CP	070H
+	JP	NZ,AFMTH2
+	LD	C,13
+	LD	A,0
+LKILL1	EQU	$-1
+	LD	B,A
+	COLOR	RED
+	LD	A,0
+LKILL	EQU	$-1
+	AND	0F0H
+	RRCA
+	RRCA
+	RRCA
+	RRCA
+	CALL	PNUM
+	LD	A,(LKILL)
+	AND	0FH
+        CALL    PNUM
+        XOR     A
+	CALL	PNUM
+AFMTH2	LD	A,(AFMATH)
+	CP	1
+	JP	NZ,AFMTH1
+	MOV	B,(LKILL1)
+	DEC	B
+	DEC	B
+	DEC	B
+	DEC	B
+	LD	C,13
+	COLOR	BLACK
+	LD	E,5
+TAF	LD	D,19
+	PUSH	BC
+	CALL	LINEH
+	POP	BC
+	DEC	C
+	DEC	E
+	JP	NZ,TAF
+AFMTH1	MOV	(AFM3),(RP)
+; 0824
+	LD	A,(OP)
+	CP	0
+AFM3	EQU	$-1
+	JR	Z,AFM4
+	LD	B,A
+	LD	C,127
+	CALL	LB
+AFM4	COLOR	RED
+
+	MOV	(OP),(RP)
+	LD	B,A
+	LD	C,127
+	CALL	LB
+	LD	A,0
+POOF	EQU	$-1
+	AND	A
+	JP	Z,CONT
+	DEC	A
+	LD	(POOF),A
+	CALL	Z,XPLOER
+	JP	LOOP1
+CONT	LD	A,0
+MIS	EQU	$-1
+	AND	A
+	JP	Z,MREAD
+	DEC	A
+	CP	11
+	JR	Z,MERA
+	LD	(MIS),A
+	LD	C,A
+	COLOR	TEST
+	MOV	B,(MPOS)
+	CALL	XY
+	JR	NZ,MERA
+	COLOR	WHITE
+	CALL	XY
+	INC	C
+	INC	C
+	INC	C
+	COLOR	BLACK
+; 0881        
+	CALL	XY
+	JP	LOOP1
+MERA	MOV	(MIS1),(MIS)
+	CALL	CHMAN
+	LD	A,(SHIP)
+	AND	A
+	JP	Z,NOHIT
+	LD	B,A
+	LD	A,(MPOS)
+	SUB	B
+	CP	11
+	JP	NC,NOHIT
+	LD	A,(MIS)
+	CP	14
+	JP	NC,NOHIT
+	CP	9
+	JP	C,NOHIT
+	LD	A,(SHIPOC)
+	CP	2
+	JP	NZ,SCKS1
+	LD	A,(BLINKR)
+	CP	5
+	JP	NC,NOHIT
+SCKS1	XOR	A
+	LD	(SHIPE),A
+	MOV	(AFMATH),0A0H
+	CALL	BOOM
+	MOV	E,(COUNT)
+	LD	E,A
+	LD	D,0
+	LD	HL,CDAT
+	ADD	HL,DE
+	LD	A,(SHIPOC)
+	CP	2
+	JP	NZ,SCKS2
+	LD	HL,TWOHUN
+SCKS2	MOV	(SINC),(HL)
+; LINE 923 (BELOW) MISSING ALL THAT REMAINS IS "KV" AT THE END OF THE LINE BUT IT IS JUST A MACRO EXPANSION
+;KV
+	LD	(LKILL),A
+	CALL	SCR
+	MOV	(LKILL),(SHIP)
+NOHIT	LD	A,(MIS1)
+	LD	C,A
+	MOV	B,(MPOS)
+	XOR	A
+	LD	(MIS),A
+; 0938        
+	COLOR	BLACK
+	CALL	XY
+	INC	C
+	CALL	XY
+	INC	C
+	CALL	XY	;	MISSING	LINE,	RECOVERED	FROM	HEX
+	INC	C
+	CALL	XY
+	COLOR	WHITE
+	CALL	XPLODR
+	MOV	(POOF),40
+        
+; 0954
+	JP	LOOP1
+TWOHUN	DB	20H
+MREAD	IN	A,18H
+	AND	BUTTNF
+	JP	NZ,LOOP1A
+	LD	A,0
+BHOLD	EQU	$-1
+	AND	A
+	JP	Z,LOOP1
+	XOR	A
+	LD	(BHOLD),A
+	LD	A,50
+	OUT	6,A
+	LD	A,(COUNT)
+	INC	A
+	CP	15
+	JP	NZ,COUNT1
+	LD	A,(SHIP)
+	AND	A
+	JP	NZ,FORGCD
+	LD	A,(SD)
+	NEG
+	LD	(SD),A
+FORGCD	XOR	A
+COUNT1	LD	(COUNT),A
+	LD	A,(OP)
+	ADD	A,3
+	LD	(MPOS),A
+	MOV	(MIS),122
+	JR	LOOP1
+LOOP1A	MOV	(BHOLD),1
+LOOP1	LD	A,(COUNTR)
+	AND	3
+	CALL	Z,PR
+	LD	A,0
+; 0995        
+SPCC	EQU	$-1
+	INC	A
+	LD	(SPCC),A
+	CP	14
+	JP	NZ,LOOP2
+	XOR	A
+	LD	(SPCC),A
+	LD	A,0
+SHIP	EQU	$-1
+	AND	A
+	JP	Z,NOSHIP
+	COLOR	BLACK
+	LD	E,5
+	LD	C,13
+	LD	A,(SHIP)
+	DEC	A
+	DEC	A
+	LD	B,A
+TL	LD	D,15
+	PUSH	BC
+	CALL	LINEH
+	POP	BC
+	DEC	C
+	DEC	E
+	JP	NZ,TL
+	INC	B
+	INC	B
+	LD	A,0
+SHIPE	EQU	$-1
+	AND	A
+	MOV	(SHIPE),1
+	LD	A,1
+	LD	(SHIPE),A
+	JP	NZ,NOH
+	XOR	A
+	LD	(SHIP),A
+	JP	NOSHIP
+NOH	LD	A,0
+DROPW	EQU	$-1
+	AND	A
+	JP	NZ,SD2
+	LD	A,0
+SD	EQU	$-1
+        ADD     A,B
+	LD	(SHIP),A
+	CP	118
+	JP	NZ,SD1
+	XOR	A
+	LD	(SHIP),A
+	JP	NOSHIP
+SD1	AND	A
+	JP	NZ,SD2
+	LD	(SHIP),A
+	JP	NOSHIP
+SD2	COLOR	RED
+	LD	C,13
+	LD	A,(SHIPOC)
+	CP	2
+	JP	NZ,SD2A
+	LD	A,0
+; 1061
+BLINKR	EQU	$-1
+	INC	A
+	LD	(BLINKR),A
+	CP	5
+	JP	C,BLIN1
+	CP	10
+	JP	NZ,BLIN2
+	XOR	A
+	LD	(BLINKR),A
+BLIN2	COLOR	BLACK
+BLIN1	CALL	BLSHDR
+	JP	LCOUNT
+SD2A	CALL    SDRAWR
+	JP	LCOUNT
+BLSHDR	LD	A,5
+        ADD     A,B
+	LD	B,A
+	PUT	45
+	PUT	52
+	RET
+; Draw saucer        
+SDRAWR	INC	B
+	CALL	XY
+	INC	B
+	INC	B
+	INC	B
+	INC	B
+	CALL	XY
+	INC	B
+	INC	B
+	INC	B
+	INC	B
+	CALL	XY	
+	INC	B
+	DEC	C
+	CALL	XY
+	DEC	B
+	CALL	XY
+	DEC	B
+	CALL	XY
+	DEC	B
+	DEC	B
+	CALL	XY
+	DEC	B
+	CALL	XY
+	DEC	B
+	CALL	XY
+	DEC	B
+	DEC	B
+	CALL	XY
+	DEC	B
+	CALL	XY
+	DEC	B
+	CALL	XY
+; 1121        
+	DEC	C
+	INC	B
+	LD	D,9
+	CALL	LINEH
+	LD	A,-8
+	ADD	A,B
+	LD	B,A
+	LD	D,7
+	DEC	C
+	CALL	LINEH
+	DEC	B
+	DEC	B
+	CALL	XY
+	DEC	B
+	DEC	B
+	DEC	B
+	DEC	B
+	CALL	XY
+	RET
+NOSHIP	LD	A,(SLEN)
+	AND	A
+	JP	NZ,LCOUNT
+	LD	A,(SD)
+	AND	A
+	LD	A,2
+	JP	P,DOK
+	LD	A,116
+DOK	LD	(SHIP),A
+	XOR	A
+	LD	(SLEN),A
+	LD	A,0
+SHIPOC	EQU	$-1
+	INC	A
+	LD	(SHIPOC),A
+LCOUNT	LD	A,0
+SLEN	EQU	$-1
+	INC	A
+	LD	(SLEN),A
+LOOP2	CALL	RAND
+	AND	1FH
+	JP	NZ,LOOP3
+	LD	A,(SHIP)
+	AND	A
+	JP	Z,LOOP3
+	LD	A,(DROPW)
+	AND	A
+	JP	NZ,LOOP3
+	LD	A,(SET)
+	CP	2
+	JP	C,LOOP3
+	LD	E,11
+	LD	HL,ROW5
+L2C	LD	A,(HL)
+	AND	A
+; 1175        
+	JP	NZ,L2A
+	INC	HL
+	LD	A,(HL)
+	CP	10
+	JP	C,L2A1
+	CP	110
+	JP	NC,L2A1
+	LD	A,(SHIP)
+	ADD	A,8
+	SUB	(HL)
+	JP	P,L2B
+	NEG
+L2B	CP	3
+	JP	NC,L2A1
+	DEC	HL
+	LD	(HL),13
+	MOV	(DROPW),1
+	JP	LOOP3
+L2A	INC	HL
+L2A1	INC	HL
+	INC	HL
+	DEC	E
+	JR	NZ,L2C
+LOOP3	LD	A,0
+DALI1	EQU	$-1
+	INC	A
+	LD	(DALI1),A
+	AND	3
+	JP	Z,LOOP4
+	LD	A,0
+DALIEN	EQU	$-1
+	AND	A
+	JP	Z,LOOP4
+	LD	E,A
+	LD	IX,ALIENT
+L3A	LD	B,(IX)
+	LD	C,(IX+1)
+	PUSH	BC
+	PUSH	DE
+	COLOR	BLACK
+	PUT	44
+	POP	DE
+	POP	BC
+	INC	C
+	INC	C
+	LD	A,1
+	OR	C
+	LD	C,A
+	LD	(IX+1),A
+	PUSH	AF
+	PUSH	BC
+	PUSH	DE
+	COLOR	WHITE
+; 1236        
+	PUT	44
+	POP	DE
+	POP	BC
+	POP	AF
+	CP	121
+	JR	NZ,L3B
+	PUSH	DE
+	PUSH	BC
+	PUSH	HL
+	LD	A,E
+	ADD	A,A
+	LD	C,A
+	LD	B,0
+	PUSH	IX
+	POP	DE
+	LD	H,D
+	LD	L,E
+	INC	HL
+	INC	HL
+	LDIR
+	POP	HL
+	POP	BC
+	POP	DE
+	LD	A,(DALIEN)
+	DEC	A
+	LD	(DALIEN),A
+	DEC	E
+	JR	Z,LOOP4
+	JP	L2A
+L3B	INC	IX
+	INC	IX
+	DEC	E
+	JP	NZ,L2A
+LOOP4	LD	A,0
+INVEXC	EQU	$-1
+	AND	A
+	JP	Z,LOOP5
+	LD	E,A
+	LD	IX,INVEXP
+L4A	DEC	(IX)
+	JR	NZ,L4B
+	COLOR	BLACK
+	LD	B,(IX+1)
+	LD	C,(IX+2)
+	CALL	XPLDR1
+	PUSH	DE
+; 1289        
+	LD	D,0
+	LD	HL,0
+	ADD	HL,DE
+	ADD	HL,DE
+	ADD	HL,DE
+	LD	B,H
+	LD	C,L
+	PUSH	IX
+	PUSH	DE
+	LD	H,D
+	LD	L,E
+	INC	HL
+	INC	HL
+	INC	HL
+	LDIR
+	POP	DE
+	LD	A,(INVEXC)
+	DEC	A
+	LD	(INVEXC),A
+	DEC	E
+	JP	Z,LOOP5
+	JP	L4A
+L4B	INC	IX
+	INC	IX
+	INC	IX
+	DEC	E
+	JR	NZ,L4A
+LOOP5	JP	LOOP
+IBOMB	LD	IY,BOM
+ABCD	LD	B,(IY)
+	LD	C,(IY+1)
+	LD	A,B
+	INC	A
+	JP	Z,DRP
+	COLOR	BLACK
+	PUSH	BC
+	INC	B
+	PUT	(IY+2)
+	LD	A,(IY+2)
+	XOR	1
+	LD	(IY+2),A
+	POP	BC
+	INC	C
+	INC	C
+	LD	A,C
+	CP	126
+	JR	NC,HISE
+	COLOR	TEST
+	CALL	XY
+	JR	NZ,HISE
+	LD	A,(MIS)
+	SUB	C
+	JP	P,JEF1
+; 1350
+	NEG
+JEF1	CP	4
+	JP	NC,JEF2
+	LD	A,(MPOS)
+	SUB	B
+	JP	P,JEF3
+	NEG
+JEF3	CP	2
+	JP	C,HISE
+JEF2	COLOR	WHITE
+	PUSH	BC
+	INC	B
+	PUT	(IY+2)
+	POP	BC
+	LD	(IY+1),C
+	INC	IY
+	INC	IY
+	INC	IY
+	JP	ABCD
+HISE	PUSH	BC
+	PUSH	IY
+	POP	DE
+	PUSH	IY
+	POP	HL
+	INC	HL
+	INC	HL
+	INC	HL
+	LD	BC,50
+	LDIR
+	POP	BC
+	MOV	E,(INVEXC)
+	LD	D,0
+	LD	HL,INVEXP
+	ADD	HL,DE
+	ADD	HL,DE
+	ADD	HL,DE
+	LD	(HL),20
+	INC	HL
+	LD	(HL),B
+	INC	HL
+	INC	C
+JEF9	LD	(HL),C
+	INC	E
+	MOV	(INVEXC),E
+	PUSH	BC
+; 1404        
+	COLOR	WHITE
+	CALL	XPLDR1
+	POP	BC
+	LD	A,C
+	CP	123
+	JP	C,ABCD
+	LD	A,(RP)
+	SUB	B
+	NEG
+	CP	8
+	JP	NC,ABCD
+	JP	CRASH
+DRP	LD	A,0
+CA4	EQU	$-1
+	OR	A
+	JR	Z,DRP1
+	DEC	A
+	LD	(CA4),A
+	RET
+DRP1	CALL	RAND
+	AND	3
+	JR	Z,DRP1A
+DRP1B	CALL	RAND
+	AND	15
+	CP	11
+	JR	NC,DRP1B
+	LD	C,A
+	LD	B,0
+	LD	IX,ROW1
+	ADD	IX,BC
+	ADD	IX,BC
+	ADD	IX,BC
+	LD	C,33
+	LD	E,5
+DRP1C	LD	A,(IX)
+	AND	A
+	JR	NZ,DRP1D
+DRP1DA	ADD	IX,BC
+	DEC	E
+	JR	NZ,DRP1C
+	JP	DRP1A
+DRP1D	CP	5
+	JR	NC,DRP1DA
+	LD	A,(IX+2)
+	CP	120
+	RET	NC
+	JR	DROP
+DRP1A	LD	IX,ROW1
+	LD	B,55
+AZW5	LD	A,(IX)
+	OR	A
+	JP	Z,NODROP
+	CP	5
+	JP	NC,NODROP
+	LD	A,(IX+2)
+	CP	120
+	RET	NC
+; 1464        
+	LD	A,(IX+1)
+	DEC	A
+	DEC	A
+	LD	C,A
+	LD	A,(RP)
+	SUB	C
+	NEG
+	JR	Z,DROP
+	CP	8
+	JR	C,DROP
+NODROP	INC	IX
+	INC	IX
+	INC	IX
+	DJNZ	AZW5
+	RET
+DROP	LD	B,(IX+1)
+	LD	C,(IX+2)
+	DEC	B
+	DEC	B
+	INC	C
+	INC	C
+	INC	C
+	LD	(IY),B
+	LD	(IY+1),C
+FLUBN	CALL	RAND
+	AND	6
+	JR	Z,FLUBN
+	ADD	A,44
+	LD	(IY+2),A
+	LD	(IY+3),255
+	LD	(IY+4),255
+	MOV	(CA4),A
+	RET
+CRASH	COLOR	BLACK
+	LD	A,0
+LBASES	EQU	$-1
+	PUSH	AF
+	LD	BC,5+97*256
+	CALL	PNUM
+	LD	B,97
+	COLOR	BLUE
+	POP	AF
+	DEC	A
+	PUSH	AF
+	CALL	PNUM
+	LD	A,10
+; 1518        
+	LD	(RP),A
+	COLOR	BLACK
+	LD	HL,BASESX
+	LD	A,(LBASES)
+	DEC	A
+	JR	Z,BPO4
+BPO3	DEC	A
+	JR	Z,BPO5
+	INC	HL
+	JR	BPO3
+BPO5	LD	C,5
+	LD	B,(HL)
+	CALL	LB
+BPO4	POP	AF
+	LD	(LBASES),A
+	JP	Z,EOG
+	CALL	BOOM
+	LD	HL,0			;	Need	interrupt	delay	count	here
+LBAS1	DEC	HL
+	LD	A,L
+	OR	H
+	JR	NZ,LBAS1
+	JP	LOOPB
+CHMAN	LD	HL,ROW1
+	LD	C,A
+	MOV	B,(MPOS)
+; 1548        
+	MOV	(CC),55
+LC	LD	A,(HL)
+	AND	A
+	JP	Z,NC
+	CP	5	
+	EX	AF,AF'
+	LD	A,0
+	LD	(NPOINT),A
+	EX	AF,AF'
+	JR	C,CHM3
+	EX	AF,AF'
+	LD	A,100
+	LD	(NPOINT),A
+	EX	AF,AF'
+	LD	E,A
+	INC	HL
+	LD	D,(HL)
+	INC	HL
+	JR	CHM4
+CHM3	INC	HL
+	LD	D,(HL)
+	DEC	D
+	INC	HL
+	LD	E,(HL)
+CHM4	DEC	E
+	LD	A,D
+	SUB	B
+; 1578        
+	JP	C,NC1
+	CP	6
+	JP	NC,NC1
+	LD	A,E
+	SUB	C
+	JP	C,NC1
+	CP	6
+	JP	NC,NC1
+	DEC	HL
+	DEC	HL
+	LD	A,(HL)
+	CP	5
+	JR	C,CHM5
+	XOR	A
+	LD	(DROPW),A
+	LD	A,1
+CHM5	LD	(SCRCH),A
+	XOR	A
+	LD	(HL),A
+	PUSH	HL
+	LD	B,D
+	LD	C,E
+	LD	E,6
+	LD	A,-5
+	ADD	B
+	LD	B,A
+	COLOR	BLACK
+CHM1	LD	D,6
+	CALL	LINEH
+	LD	A,-6
+	ADD	B
+	LD	B,A
+	DEC	C
+	DEC	E
+	JP	NZ,CHM1
+	LD	A,1
+	LD	(XPLO),A
+	LD	A,0
+NPOINT	EQU	$-1
+	LD	(X5),A
+	AND	A
+	JR	Z,CHM6
+	LD	A,(DALIEN)
+	INC	A
+	LD	(DALIEN),A
+	PUSH	HL
+	LD	L,A
+	LD	H,0
+	ADD	HL,HL
+	LD	DE,ALIENT
+	ADD	HL,DE
+; 1632        
+	POP	HL
+	INC	HL
+	LD	BC,2
+	LDIR
+CHM6	LD	HL,TDAT
+	LD	DE,0
+SCRCH	EQU	$-2
+	DEC	DE
+	ADD	HL,DE
+	LD	A,(HL)
+	LD	(SINC),A
+	CALL	SCR
+	LD	A,(LEV)
+	POP	HL
+	AND	A
+	JP	Z,NOSPLT
+	LD	A,(SCRCH)
+	CP	2
+	JP	NZ,NOSPLT
+	LD	(HL),4
+	PUSH	HL
+	INC	HL
+	LD	B,(HL)
+	INC	HL
+	LD	C,(HL)
+	DEC	C
+	PUSH	BC
+	COLOR	BLACK
+	PUT	54
+	POP	BC
+	COLOR	WHITE
+	DEC	B
+	PUT	40
+	POP	HL
+	DEC	HL
+	LD	C,(HL)
+	DEC	HL
+	LD	B,(HL)
+	DEC	HL
+	LD	(HL),4
+	DEC	C
+	PUSH	BC
+	COLOR	BLACK
+	PUT	54
+	POP	BC
+	COLOR	WHITE
+; 1693        
+	DEC	B
+	PUT	53
+NOSPLT	LD	B,55
+	LD	HL,ROW1
+EOSL	LD	A,(HL)
+	AND	A
+	JP	NZ,OK
+	INC	HL
+	INC	HL
+	INC	HL
+	DJNZ	EOSL
+	LD	A,50H
+	LD	(SINC),A
+	LD	A,10
+	LD	(BM1),A
+	LD	A,5
+	LD	(BM1+1),A
+	LD	A,(SCRCH)
+	CP	3
+	JP	NZ,NO500
+	CALL	SCR
+	LD	A,(CC)
+	CP	45
+	JP	NZ,ONLY5
+	LD	A,1
+	LD	(BM1),A
+	XOR	A
+	LD	(BM1+1),A
+	CALL	SCR
+ONLY5	LD	A,(CC)
+	CP	50
+	JP	NZ,ONLY5A
+	LD	A,8
+	LD	(BM1+1),A
+	LD	A,30H
+	LD	(SINC),A
+	CALL	SCR
+ONLY5A	LD	BC,21*256+61
+	COLOR	BLUE
+	LD	HL,BM1
+	CALL	MESOUT
+	JP	BONUSE
+BM1	DB	1,0,0,0,10,26,25,19,24,30,10,12,255
+; 1744
+BONUSE	LD	C,30
+WHOOP	LD	A,B
+WHOOP1	DEC	A
+	JP	NZ,WHOOP1
+	LD	A,7FH
+WHOOP2	EQU	$-1
+	CPL
+	LD	(WHOOP2),A
+	OUT	19H,A	;	NEED	INTERRUPT	DELAY	HERE
+	DEC	B
+	JP	NZ,WHOOP
+	DEC	C
+	JP	NZ,WHOOP
+	COLOR	BLACK
+	LD	BC,21*256+61
+	LD	HL,BM1
+	CALL	MESOUT
+NO500	LD	A,(SCRCH)
+	ADD	A,38
+	CP	39
+	JP	Z,NO500A
+	INC	A
+	CP	43
+	JP	C,NO500A
+	LD	A,40
+NO500A	LD	(SCRCH1),A
+	LD	A,(CC)
+	NEG
+	ADD	A,55
+	LD	E,A
+	LD	D,0
+	LD	HL,ROW1
+	ADD	HL,DE
+	ADD	HL,DE
+	ADD	HL,DE
+	INC	HL
+	LD	B,(HL)
+	INC	HL
+	LD	C,(HL)
+	LD	A,1
+	LD	(SOSD),A
+	LD	(SHIP),A
+	LD	A,3FH
+	LD	(SWH1),A
+	LD	A,6
+	LD	(SOSDU),A
+SOSLOP	COLOR	BLACK
+	CALL	SOSPUT
+	LD	A,0
+SOSD	EQU	$-1
+	ADD	A,B
+	LD	B,A
+	CP	117
+	JP	NZ,SOSD1
+; 1804        
+SOSD4	LD	A,(SOSD)
+	NEG
+	LD	(SOSD),A
+	PUSH	BC
+	LD	HL,SOS
+	LD	A,B
+	CP	30
+	JP	C,GT30
+	LD	B,5
+	JR	LT30
+GT30	LD	B,127-42
+LT30	COLOR	RED
+	CALL	MESOUT
+	LD	A,-1
+	POP	BC
+SOSD1	CP	0
+	JP	Z,SOSD4
+SOSD2	LD	A,0
+SOSDU	EQU	$-1
+	DEC	A
+	LD	(SOSDU),A
+	JP	NZ,SOSD3
+	LD	A,6
+	LD	(SOSDU),A
+	DEC	C
+	LD	A,10
+	CP	C
+	JP	Z,START1
+SOSD3	COLOR	RED
+	CALL	SOSPUT
+	PUSH	BC
+	LD	BC,800
+SOSPT	DEC	BC
+	LD	A,B
+	OR	C
+; 1845        
+	JR	NZ,SOSPT
+	POP	BC
+	LD	A,B
+	CP	64
+	JP	NZ,SOSLOP
+	CALL	RAND
+	AND	7
+	JP	NZ,SOSLOP
+	DEC	C
+	LD	A,-2
+	LD	(DOWN),A
+; 1855        
+	XOR	A
+	LD	(DIREC),A
+	LD	(SHIP),A
+	LD	HL,ENGTRO
+	PUSH	BC
+	LD	A,6
+	ADD	A,C
+	LD	C,A
+	LD	B,22
+	CALL	MESOUT
+	POP	BC
+	LD	A,8
+	ADD	A,B
+	LD	B,A
+	LD	A,-4
+	ADD	A,C
+	LD	C,A
+ELOP	LD	A,(SCRCH)
+	LD	D,A
+	LD	A,(PHASE)
+	INC	A
+	LD	(PHASE),A
+	PUSH	BC
+	CALL	MD
+	POP	BC
+	DEC	C
+	DEC	C
+	LD	HL,15000
+ETOBW	DEC	HL
+	LD	A,H
+	OR	L
+	JR	NZ,ETOBW	;	NEED	INTERRUPT	DELAY	HERE
+	LD	A,7
+	CP	C
+	JP	NC,START1
+	JP	ELOP
+ENGTRO	DB	15,24,17,19,24,15,10,30,28,25,01FH,0CH,16H,0FH,0FFH
+SOS	DB	29,25,29,10,43,43,43,255 ; 'SOS !!!'
+SOSPUT	PUSH	BC
+	CALL	SDRAWR
+	POP	BC
+	PUSH	BC
+	LD	A,8
+	ADD	A,B
+	LD	B,A
+	LD	A,-4
+	ADD	A,C
+	LD	C,A
+	LD	A,0
+SCRCH1	EQU	$-1
+	CALL	PNUM
+	POP	BC
+	RET
+OK	RET
+; 1910
+NC	INC	HL
+	INC	HL
+NC1	INC	HL
+	LD	A,0
+CC	EQU	$-1
+	DEC	A
+	LD	(CC),A
+	JP	NZ,LC
+	RET
+PR	LD	A,(X5)
+	AND	A
+	JR	NZ,PROK
+	LD	A,(XPLO)
+	CP	XLEN-1
+	RET	NZ
+PROK	IN	A,18H
+	AND	80H
+	LD	A,0
+CM	EQU	$-1
+	INC	A
+	CP	55
+	JP	NZ,RP1
+	LD	A,20
+	LD	(DUR),A
+	LD	A,0
+PHASE	EQU	$-1
+	DEC	A
+	LD	(PHASE),A
+	LD	A,(DOWNP)
+	LD	(DOWN),A
+	AND	A
+	JP	Z,SKIPD
+	LD	A,(DIREC)
+	NEG
+	LD	(DIREC),A
+SKIPD	XOR	A
+	LD	(DOWNP),A
+RP1	LD	(CM),A
+	LD	E,A
+	XOR	A
+	LD	D,A
+	LD	HL,ROW1
+	ADD	HL,DE
+	ADD	HL,DE
+	ADD	HL,DE
+	LD	D,(HL)
+	LD	A,D
+	CP	5
+	JP	C,RP4
+	INC	A
+	LD	(HL),A
+	LD	C,A
+	LD	D,1
+	LD	(YCMP),A
+	INC	HL
+; 1965        
+	LD	B,(HL)
+	INC	HL
+	LD	E,(HL)
+	DEC	HL
+	DEC	HL
+	LD	A,0
+YCMP	EQU	$-1
+	CP	E
+	JR	NZ,YCMP1
+	LD	(HL),1
+	XOR	A
+	LD	(DROPW),A
+YCMP1	INC	HL
+	INC	HL
+	LD	A,(CM)
+	DEC	A
+	LD	(CM),A
+	PUSH	BC
+	DEC	C
+	JP	MD1
+RP4	INC	HL
+	LD	A,(DIREC)
+	ADD	(HL)
+	LD	(HL),A
+	LD	B,A
+	LD	A,D
+	AND	A
+	JP	Z,RP3
+	LD	A,B
+	CP	8
+	JP	NZ,RP2
+	LD	A,5
+	LD	(DOWNP),A
+RP2	CP	126
+	JP	NZ,RP3
+	LD	A,5
+	LD	(DOWNP),A
+RP3	INC	HL
+	LD	A,(DOWN)
+	ADD	(HL)
+	LD	(HL),A
+	LD	C,A
+	LD	A,D
+	AND	A
+	JP	Z,PR
+	LD	A,C
+	CP	127
+	JP	Z,EOG
+MD	PUSH	BC
+	LD	A,(DIREC)
+	NEG
+	ADD	A,B
+	DEC	B
+	DEC	B
+	LD	B,A
+	LD	A,(DOWN)
+	NEG
+	ADD	A,C
+	LD	C,A
+MD1	DEC	C
+; 2025
+	LD	A,-6
+	ADD	A,B
+	LD	B,A
+	PUSH	DE
+	COLOR	BLACK
+;	LD	H,6
+;MANL	LD	E,B
+;	LD	D,6
+;	CALL	LINEH
+;	DEC	C
+;	DEC	H
+;	LD	B,E
+;	JP	NZ,MANL
+        LD      A,-6    ;NEW
+        ADD     A,C
+        LD      C,A
+        LD      A,NUMZER-1
+        CALL    PNUM            ; New code 2020
+	POP	DE
+	POP	BC
+	LD	A,D
+	CP	3
+	LD	A,RED   ; D=4
+	JR	C,MDIN
+        LD      A,WHITE
+        JR      Z,MDIN  ; D=3
+	LD	A,(PHASE)
+	AND	1
+	LD	A,BLUE  
+	JR	Z,MDIN
+	LD	A,RED
+MDIN	LD	(ONOFF),A
+	DEC	B
+	DEC	C
+	LD	A,(PHASE)
+; 2058        
+	AND	1        ; Which phase are the invaders in
+	RLC	D        ; D * 2
+	OR	D       ; phase + D*2
+	SUB	2       ; phase + d*2 -2
+        ADD     A,INVCHR
+        JP      PNUM    ; Bit blit the invader
+        
+; Old CHARO way of plotting invaders        
+;	ADD	A,A     ; *2
+;	LD	D,A
+;	ADD	A,A     ; *4
+;	ADD	A,D     ; *6
+;	LD	E,A
+;	LD	D,0     ; DE = size of one graphic in bytes
+;	LD	HL,TABM ; position of invader graphic
+;	ADD	HL,DE
+CHARO	EQU	$-1
+	LD	A,6
+	LD	(CR),A
+PL1	LD	E,6
+	LD	D,B
+	LD	A,(HL)
+PL	RRCA
+	PUSH	AF
+	CALL	C,XY
+; 2079        
+	DEC	B
+	POP	AF
+	DEC	E
+	JR	NZ,PL
+	LD	B,D
+	DEC	C
+	LD	A,0
+CR	EQU	$-1
+	DEC	A
+	LD	(CR),A
+	INC	HL
+	JR	NZ,PL1
+	RET
+EOG	LD	A,19H
+	LD	(BMOUT),A
+	LD	A,16
+	LD	(BMLEN),A
+	CALL	BOOM
+	LD	B,16
+D1	LD	HL,0
+D2	DEC	HL
+	LD	A,L
+	OR	H
+	JR	NZ,D2	;	NEED	INTERRUPT	DELAY	HERE
+	DJNZ	D1
+	LD	A,4
+	LD	(BMLEN),A
+	LD	A,1BH
+	LD	(BMOUT),A
+	LD	A,0
+	OUT	0EH,A
+	CALL	HIGHZ
+	MOV	(SCR1),81H
+	MOV	(SCR2),85H
+	LD	A,SC1/512+80H
+	OUT	0EH,A
+	JP	START
+; 2127     
+DIREC	DS	1
+DOWNP	DS	1
+DOWN	DS	1
+ROW1	DS	33
+ROW2	DS	33
+ROW3	DS	33
+ROW4	DS	33
+ROW5	DS	33
+SET	DS	1
+SETD	DB	3,3,3,3,3,3,3,3,3,3,3
+	DB	3,3,3,3,3,3,3,3,3,3,3
+	DB	2,2,2,2,2,2,2,2,2,2,2
+	DB	2,2,2,2,2,2,2,2,2,2,2
+	DB	1,1,1,1,1,1,1,1,1,1,1
+	DB	3,3,3,3,3,3,3,3,3,3,3
+	DB	3,3,3,3,2,2,2,3,3,3,3
+	DB	1,1,0,2,2,0,2,2,0,1,1
+	DB	1,1,1,1,1,1,1,1,1,1,1
+	DB	1,1,1,1,1,1,1,1,1,1,1
+	DB	3,3,3,3,3,3,3,3,3,3,3
+	DB	3,2,2,2,0,3,0,2,2,2,3
+	DB	1,0,2,2,2,0,2,2,2,0,1
+	DB	4,4,4,4,4,4,4,4,4,4,4
+; 2151        
+	DB	1,1,1,1,1,1,1,1,1,1,1
+	DB	3,2,3,3,3,3,3,3,3,2,3
+	DB	3,3,0,2,2,2,2,2,0,3,3
+        DB	3,3,0,2,2,2,2,2,0,3,3
+	DB	4,0,1,0,2,1,2,0,1,0,4
+	DB	4,4,2,0,1,1,1,0,2,4,4
+	DB	1,1,1,1,1,1,1,1,1,1,1
+	DB	3,3,2,2,2,2,2,2,2,3,3
+        DB	3,3,2,2,2,2,2,2,2,3,3
+	DB	1,2,2,2,2,2,2,2,2,2,1
+	DB	1,1,1,1,2,2,2,1,1,1,1
+	DB	1,1,1,1,1,1,1,1,1,1,1
+SETD1	DB	0,1,1,1,1,2,2,3,3,4,4,4,1,3,3,2,2
+BASESX	DB	105,113,121
+LEVD	DB	0,1,2,3,3,3,4,4,4
+LEVD1	DB	62,87,97,102,107
+LEV	DS	1
+MIS1	DS	1
+BOOM	DI
+	LD	A,3CH
+	LD	(KABOOM),A
+	LD	A,18H
+	OUT	2,A
+	LD	A,9
+	OUT	3,A
+	LD	HL,BOOM1
+	LD	(1),HL
+	XOR	A
+	LD	(FDUR1),A
+	LD	A,4
+	LD	(FDUR),A
+; 2181        
+	LD	A,8
+	OUT	5,A
+	EI
+	RET
+BOOM1	DI
+	PUSH	AF
+	PUSH	HL
+	LD	A,0
+FDUR	EQU	$-1
+	DEC	A
+	LD	(FDUR),A
+	JP	NZ,BOOM2
+	LD	A,XLEN-1
+	LD      (XPLO),A
+	LD	A,6
+BMLEN	EQU	$-1
+	LD	(FDUR),A
+	LD	A,0
+FDUR1	EQU	$-1
+	INC	A
+KABOOM	EQU	$-1
+	LD	(FDUR1),A
+	JP	NZ,BOOM3
+	LD	HL,INTER1
+	LD	(1),HL
+	LD	A,0
+	OUT	2,A
+	LD	A,62
+	OUT	7,A
+	LD	A,100
+	OUT	5,A
+	LD	A,255
+	OUT	8,A
+	OUT	9,A
+	POP	HL
+	LD	A,0CBH
+	OUT	3,A
+	LD	A,8
+	OUT	2,A
+	POP	AF
+	EI
+        CALL    DAZMOD
+	RET
+BOOM2	EQU	$
+BOOM3	LD	A,(BOOM4)
+	INC	A
+	LD	(BOOM4),A
+	LD	A,(100H)
+BOOM4	EQU	$-2
+	LD	H,A
+	LD	A,(FDUR1)
+	OR	H
+	OUT	1BH,A
+BMOUT	EQU	$-1
+	LD	A,(FDUR1)
+; 2235        
+	POP	HL
+	OUT	5,A
+	POP	AF
+	EI
+	RET
+RAND	PUSH	HL
+	PUSH	BC
+	LD	HL,RANTAB
+	LD	B,8
+	LD	A,(HL)
+RAND1	RLCA
+	RLCA
+	RLCA
+	XOR	(HL)
+	RLA
+        RLA
+	DEC	HL
+	DEC	HL
+	DEC	HL
+	RL	(HL)
+	INC	HL
+	RL	(HL)
+	INC	HL
+	RL	(HL)
+	INC	HL
+	LD	A,(HL)
+	RLA
+	LD	(HL),A
+	DJNZ	RAND1
+	POP	BC
+	POP	HL
+	RET
+	DB	29H,98H,0DAH,1BH
+RANTAB	EQU	$-1
+XPLOER	COLOR	BLACK
+XPLODR	LD	A,(MIS1)
+	LD	C,A
+	LD	A,(MPOS)
+	LD	B,A
+XPLDR1	DEC	B
+	CALL	XY
+	INC	B
+; 2280        
+	INC	B
+	INC	B
+	CALL	XY
+	DEC	C
+	DEC	B
+	CALL	XY
+	DEC	B
+	CALL	XY
+	DEC	C
+	CALL	XY
+	INC	B
+	CALL	XY
+	DEC	C
+	CALL	XY
+	DEC	B
+	CALL	XY
+	DEC	B
+	DEC	C
+	CALL	XY
+	INC	B
+	INC	B
+	INC	B
+	CALL	XY
+	RET
+INTER1	DI
+	PUSH	AF
+	LD	A,0
+DUR	EQU	$-1
+	AND	A
+	JP	Z,XIN1
+	DEC	A
+	LD	(DUR),A
+	LD	A,7FH
+SOUND	EQU	$-1
+	CPL
+	LD	(SOUND),A
+	OUT	19H,A
+XIN1	LD	A,60
+	OUT	5,A
+	POP	AF
+	EI
+	RET
+INT1	IN	A,18H
+	CPL
+	AND	BUTTNL|BUTTNR
+	RET	Z
+	AND	BUTTNL
+	LD	A,(RP)
+; 2328        
+	JP	NZ,LEFT
+RIGHT	CP	107
+	RET	Z
+	INC	A
+	LD	(RP),A
+	RET
+LEFT	CP	10
+	RET	Z
+	DEC	A
+	LD	(RP),A
+	RET
+MPOS	DS	1
+RP	DB	10
+OP	DB	10
+INT2	DI
+	PUSH	AF
+	LD	A,(SHH)
+	INC	A
+	LD	(SHH),A
+	JP	Z,XIT
+	LD	A,(100H)
+; 2349        
+SHH	EQU	$-2
+	OUT	19H,A
+	LD	A,20
+	OUT	6,A
+XIT	POP	AF
+	EI
+	RET
+DAZMOD	PUSH AF
+	LD	A,79h
+	OUT	15,A
+	LD	A,7eh
+	OUT	15,A
+	LD	A,0D1H
+	OUT	15,A
+	LD	A,SC1/512+80H
+	OUT	14,A
+        POP     AF
+	RET        
+DAZTRK  DI
+	PUSH	AF
+        GET     PACEDZ
+        DEC     A
+        LD      (PACEDZ),A
+        JR      NZ,DAZTR3
+        CALL    DAZMOD
+        MOV     (PACEDZ),30
+	JR	DAZTR3	; Use simulated page flipping in DAZMOD, Dec 2020
+
+        DI
+        EI
+        RET
+	PUSH	AF
+	LD	A,0
+DAZTR1	EQU	$-1
+	INC	A
+	LD	(DAZTR1),A
+	AND	1
+	JP	Z,DAZTR2
+	LD	A,79H
+	OUT	15,A
+	LD	A,SC1/512+80H
+SCR1	EQU	$-1
+	OUT	14,A
+	JP	DAZTR3
+DAZTR2	LD	A,7EH
+	OUT	15H,A
+	LD	A,SC2/512+80H
+SCR2	EQU	$-1
+	OUT	14,A
+DAZTR3	LD	A,181	
+	OUT	7,A
+	POP	AF
+	EI
+	RET
+SWHOOP	DI
+	PUSH	AF
+	LD	A,(SHIP)
+	AND	A
+	LD	A,-1
+	JP	Z,WHLEV
+	LD	A,7FH
+WHS	EQU	$-1
+	CPL
+	LD	(WHS),A
+	OUT	1BH,A
+	LD	A,1
+FREQ	EQU	$-1
+	DEC	A
+	DEC	A
+	AND	7FH
+SWH1	EQU	$-1
+	LD	(FREQ),A
+WHLEV	OUT	9,A
+	POP	AF
+	EI
+	RET
+INT4	DI
+	PUSH	AF
+	LD	A,0
+X5	EQU	$-1
+	AND	A
+	JR	Z,X6
+	DEC	A
+	LD	(X5),A
+; 2410        
+	LD	A,5
+X7	EQU	$-1
+	DEC	A
+	LD	(X7),A
+	LD	A,(XPLO)
+	JP	NZ,X8
+	LD	A,10
+	LD	(X7),A
+X6	LD	A,0
+XPLO	EQU	$-1
+	INC	A
+	CP	XLEN
+	JR	Z,X4
+	LD	(XPLO),A
+X8	OUT	8,A
+	LD	A,(SOUND)
+	CPL
+	LD	(SOUND),A
+	OUT	19H,A
+	POP	AF
+	EI
+	RET
+X4	LD	A,255
+	OUT	8,A
+	POP	AF
+	EI
+	RET
+COUNT	DB	0
+; 2438
+CDAT	DB	10H,5,5,10H,5,10H,5,5,30H,10H,10H,10H,5,15H,50H
+TDAT	DB	3,2,1,3
+BDAT	DB	20H
+SCORE	DW	0
+SCR	COLOR	BLACK
+	CALL	WS
+	LD	A,(SCORE+1)
+	ADD	A,0
+SINC	EQU	$-1
+	DAA
+	LD	(SCORE+1),A
+	LD	A,(SCORE)
+	ADC	A,0
+	DAA
+	LD	(SCORE),A
+	COLOR	BLUE
+; 2460        
+	CALL	WS
+        LD      A,0
+BBASES	EQU	$-1
+	AND	A
+	RET	Z
+	LD	A,(SCORE)
+	CP	3
+	RET	C
+	LD	A,(LBASES)
+	INC	A
+	LD	(LBASES),A
+	XOR	A
+	LD	(BBASES),A
+	COLOR	BLACK
+	PUSH	BC
+	PUSH	DE
+	PUSH	HL
+	LD	A,3DH
+	CALL	BOOM+3
+	LD	BC,97*256+5
+	LD	A,(LBASES)
+	DEC	A
+	CALL	PNUM
+	COLOR	BLUE
+	LD	BC,97*256+5
+	PUT	(LBASES)
+	LD	HL,BASESX
+	LD	A,(LBASES)
+	DEC	A
+BBAS1	DEC	A
+	JR	Z,BBAS2
+	INC	HL
+	JR	BBAS1
+BBAS2	LD	B,(HL)
+	CALL	LB
+	POP	HL
+; 2504        
+	POP	DE
+	POP	BC
+	RET
+	RET
+WS	LD	BC,36*256+4
+	LD	A,(SCORE)
+	AND	0F0H
+	RRCA
+	RRCA
+	RRCA
+	RRCA
+	CALL	PNUM
+	LD	A,(SCORE)
+	AND	0FH
+	CALL	PNUM
+	LD	A,(SCORE+1)
+	AND	0F0H
+	RRCA
+	RRCA
+	RRCA
+	RRCA
+	CALL	PNUM
+	LD	A,(SCORE+1)
+	AND	0FH
+	CALL	PNUM
+	XOR	A
+	CALL	PNUM
+	RET
+PNUMS	LD	E,A
+	LD	D,0
+	LD	HL,0
+	ADD	HL,DE
+	ADD	HL,DE
+	ADD	HL,DE
+	LD	D,H
+	LD	E,L
+	LD	HL,ZERO
+	ADD	HL,DE
+	PUSH	BC
+	CALL	CHARO
+	POP	BC
+	LD	A,6
+	ADD	A,B
+	LD	B,A
+	RET
+ZERO	DB	14,25,21,19,14,0	; 0
+	DB	14,4,4,12,4,0           ; 1
+	DB	31,8,6,17,14,0          ; 2
+	DB	14,1,6,1,14,0           ; 3
+	DB	2,2,31,18,18,0          ; 4
+	DB	30,1,30,16,31,0         ; 5
+	DB	14,17,30,16,15,0        ; 6
+	DB	8,4,2,1,31,0            ; 7
+	DB	14,17,14,17,14,0        ; 8
+	DB	14,1,31,17,14,0		; 9
+	DB	0,0,0,0,0,0		; SPACE
+	DB	17,31,17,10,4,0		; A
+	DB	30,17,30,17,30,0        ; B
+	DB	14,17,16,17,14,0	; C
+	DB	30,17,17,17,30,0        ; D
+        DB      31,16,30,16,31,0        ; E
+	DB	16,16,31,16,31,0        ; F
+	DB	14,18,23,16,14,0        ; G
+	DB	17,17,31,17,17,0        ; H
+	DB	14,4,4,4,14,0		; I
+	DB	14,17,1,1,1,0           ; J (bug in listing)
+	DB	9,10,12,10,9,0		; K
+	DB	31,16,16,16,16,0        ; L
+	DB	17,17,21,31,27,0        ; M
+	DB	17,19,21,25,17,0	; N
+	DB	14,17,17,17,14,0	; O
+	DB	16,16,30,17,30,0        ; P
+	DB	15,19,21,17,14,0        ; Q
+	DB	17,18,30,17,30,0	; R
+	DB	30,1,14,16,15,0         ; S
+	DB	4,4,4,4,31,0            ; T
+	DB	14,17,17,17,17,0	; U
+	DB	4,10,17,17,17,0         ; V
+	DB	17,27,21,17,17,0        ; W
+	DB	17,10,4,10,17,0		; X
+	DB	4,4,4,10,17,0		; Y (bug in listing)
+	DB	31,8,4,2,31,0		; Z (bug in listing)
+	DB	4,0,6,17,14,0           ; ?
+	DB	0,31,0,31,0,0           ; =
+	DB	18,12,30,18,12,12       ; Triangle invader
+	DB	18,12,30,18,30,12       ; Bubble invader 
+	DB	45,63,45,30,12,18       ; Armed invader 
+	DB	51,12,63,45,63,30       ; skeleton invade
+	DB	4,0,4,4,4,0             ; !
+	DB	13,54,54,13,0,0         ; @
+        DB      31,41,41,30,0,0         ; Blinking saucer left side
+	DB	2,4,2,1,2,4             ; lightning state 1
+	DB	4,2,1,2,1,2             ; lightning state 2
+	DB	6,3,6,3,2,2             ; twirl bomb state 1
+	DB	2,6,3,6,2,2             ; twirl bomb state 2
+	DB	2,2,2,2,7,2             ; T bomb state 1
+	DB	2,7,2,2,2,2             ; T bomb state 2
+	DB	60,10,10,60,0,0         ; Blinking saucer right side
+	DB	5,6,31,37,47,38         ; invader pushing left (bug in listing)
+	DB	63,63,63,63,63,63       ; block
+INVCHR  EQU     ($-ZERO) / 6
+TABM	DB	12H,0CH,1EH,12H,0CH,0CH ; triangle state 1
+        DB      2DH,12H,1EH,12H,0CH,0CH ; triangle state 2
+	DB	2DH,3FH,2DH,1EH,0CH,12H ; armed state 1 / down
+	DB	12H,0CH,3FH,2DH,2DH,12H ; armed state 2 / up
+	DB	12H,33H,3FH,2DH,3FH,1EH ; skeleton state 1 / closed
+	DB	33H,0CH,3FH,2DH,3FH,1EH ; skeleton state 2 / open
+	DB	12H,0CH,1EH,12H,1EH,0CH ; bubble state 1 / big
+	DB	0,12H,0CH,0CH,0,0       ; bubble state 2 / small
+NUMZER  EQU     ($-ZERO) / 6        
+INVFNM	DM	'INVADEHI.SCO'
+	DB	1FH
+HIGHZ	XOR	A
+	LD	(SCR1),A
+	LD	(SCR2),A
+	LD	(SHIP),A
+	LD	DE,DISBUF
+	LD	C,26
+	CALL	5
+	LD	DE,INVFCB
+	LD	HL,INVFNM
+	LD	C,134
+	CALL	5
+	LD	DE,INVFCB
+	LD	C,15
+	CALL	5
+	CP	-1
+	JP	Z,HIGHGN
+	CALL	DISKR
+	LD	HL,INVDAT+14
+	LD	B,20
+	LD	DE,16
+HIGH1	LD	A,(SCORE)
+	CP	(HL)
+	JP	C,HIGH2
+	JP	NZ,HIGH3
+	INC	HL
+	LD	A,(SCORE+1)
+	CP	(HL)
+	DEC	HL
+	JP	C,HIGH2
+	JP	Z,HIGH2
+HIGH3	LD	C,B
+	PUSH	HL
+	LD	DE,335+INVDAT
+	LD	HL,319+INVDAT
+HIGH4	LD	A,16
+	LD	(HIGH5),A
+HIGH6	LD	A,(HL)
+	LD	(DE),A
+	DEC	DE
+	DEC	HL
+	LD	A,0
+HIGH5	EQU	$-1
+	DEC	A
+	LD	(HIGH5),A
+	JR	NZ,HIGH6
+	DEC	C
+	JR	NZ,HIGH4
+	POP	HL
+	LD	A,(SCORE)
+	LD	(HL),A
+	INC	HL
+	LD	A,(SCORE+1)
+	LD	(HL),A
+	LD	DE,-15
+	ADD	HL,DE
+	LD	B,14
+HIGH7	LD	(HL),10
+	INC	HL
+	DJNZ	HIGH7
+	LD	DE,-14
+	ADD	HL,DE
+	LD	DE,HMES
+HIGH8	LD	A,(DE)
+	INC	DE
+        CP      255
+	JR	Z,HIGH9
+	CALL	OUTP
+	JP	HIGH8
+HMES	DB	13,10
+	DM	'YOU HAVE ACHIEVED A TRULY INCREDIBLE SCORE!!!'
+	DB	13,10
+	DM	'PLEASE ENTER YOUR NAME (WITHIN 14 LETTERS):'
+; 2678        
+	DB	13,10,13,10,255
+HIGH9	LD	B,14
+HIGHA	CALL	INP
+	CP	13
+	JR	Z,HIGHB
+	CP	20H
+	JR	Z,HIGHC
+	CP	41H
+	JR	C,HIGHA
+	CP	58H
+	JR	NC,HIGHA
+	CALL	OUTP
+	SUB	54
+HIGHD	LD	(HL),A
+	INC	HL
+	DJNZ	HIGHA
+	JP	HIGHB
+HIGHC	CALL	OUTP
+	LD	A,10
+	JR	HIGHD
+HIGHB	JP	DISKW
+HIGH2	ADD	HL,DE
+	DEC	B
+	JP	NZ,HIGH1
+DISKW	LD	DE,INVFCB
+	LD	HL,INVFNM
+	LD	C,134
+	CALL	5
+	LD	DE,INVFCB
+	LD	C,22
+	CALL	5
+	LD	DE,INVFCB
+	LD	C,15
+	CALL	5
+	LD	A,3
+	LD	(DISKW1),A
+	LD	HL,INVDAT-128
+DISKW2	LD	DE,128
+	ADD	HL,DE
+	PUSH	HL
+	LD	BC,128
+	LD	DE,DISBUF
+	LDIR
+	LD	DE,INVFCB
+; 2722        
+	LD	C,21
+	CALL	5
+	POP	HL
+	LD	A,0
+DISKW1	EQU	$-1
+	DEC	A
+	LD	(DISKW1),A
+	JR	NZ,DISKW2
+	LD	DE,INVFCB
+	LD	C,16
+	CALL	5
+	RET
+DISKR	LD	HL,INVDAT-128   ; FILE IS 3*128 LONG AND IS STORED AT INVDAT
+	LD	A,3
+	LD	(DISKR1),A
+	PUSH	HL
+DISKR2	LD	DE,INVFCB
+	LD	C,20
+	CALL	5
+	LD	DE,128
+	POP	HL
+	ADD	HL,DE
+	LD	A,0
+DISKR1	EQU	$-1
+	DEC	A
+	LD	(DISKR1),A
+	JP	M,DISKR3
+	PUSH	HL
+	LD	BC,128
+	LD	DE,DISBUF
+	EX	DE,HL
+	LDIR
+	JR	DISKR2
+DISKR3	LD	DE,INVFCB
+	LD	C,16
+	CALL	5
+	RET
+HIGHGN	LD	HL,ERRMES
+HIGHG1	LD	A,(HL)
+	CP	255
+	JR	Z,HIGHG2
+	CALL	OUTP
+	INC	HL
+	JR	HIGHG1
+HIGHG2	HALT
+ERRMES	DB	13,10
+; 2779
+        DM     'NO "INVADEHI.SCO" FILE WAS FOUND  PLEASE RESET MACHINE AND'
+        DB      13,10
+        DM     'XFER THE "ZIP.ZIP" FILE TO THECURRENT DISK.  THIS FILE CAN'
+        DB      13,10
+        DM     'BE FOUND ON DISK 3A...'
+	DB	13,10,13,10,255
+INP	IN	A,0
+	AND	40H
+	JR	Z,INP
+	IN	A,1
+	RET
+OUTP	EX	AF,AF'
+OUTP1	IN	A,0
+	AND	80H
+	JR	Z,OUTP1
+	EX	AF,AF'
+	OUT	1,A
+	RET
+
+; This version of XY only plots in first quadrant in one color
+XY16    LD      HL,SC1
+        LD      A,3EH
+        AND     C
+        ADD     A,A
+        ADD     A,A
+        LD      E,A
+        LD      D,0
+        ADD     HL,DE
+        ADD     HL,DE
+        LD      A,B
+        SRL     A
+        SRL     A
+        LD      E,A
+        ADD     HL,DE
+        LD      A,3
+        AND     B
+        BIT     0,C
+        JR      Z,XY16A
+        ADD     A,4
+XY16A   LD      D,DAZTB1/256
+        LD      E,A
+        LD      A,(DE)
+        OR      (HL)
+        LD      (HL),A
+        RET
+        
+CLEAR   LD      HL,SC1
+        LD      DE,SC1+1
+        LD      BC,4095
+        LD      (HL),0
+        LDIR
+        RET
+        
+; Clear first character on screen plus bit blit dimensions        
+CLSZ    LD      DE,16
+        LD      B,4
+        LD      IX,SC1
+CLSZ1   LD      (IX),0
+        LD      (IX+1),0
+        LD      (IX+2),0
+        ADD     IX,DE
+        DJNZ    CLSZ1
+        RET
+
+; Make ZEROB table (bit blit table)
+; Hand compiled from the C version
+; C version does gymnastics so it can print pretty comments       
+YBIT    DS      1
+        
+MKZERO  LD      IY,ZEROB
+        LOOPB   ZCHAR,NUMZER
+        LOOPB   ZYOFF,2
+        LOOPB   ZXOFF,4
+MKZRX1  CALL    CLSZ            ; Uses IX
+        LD      B,5
+MKZERX  LD      C,5
+        MOV     (YBIT),1 SHL 5
+MKZRC1  LD      A,(ZCHAR)       ; int color = zero[c][x] & (1 << y);
+        ADD     A,A             ; max 108
+        LD      E,A
+        LD      D,0
+        LD      L,A
+        LD      H,0
+        ADD     HL,HL
+        ADD     HL,DE           ; C * 6
+        LD      E,B
+        ADD     HL,DE
+        LD      DE,ZERO
+        ADD     HL,DE
+        LD      A,(YBIT)
+        AND     A,(HL)
+        JR      Z,MKNOBT
+        PUSH    BC
+        LD      A,5             ; xy(5-y + xOff, 5-x + yOff, color); 
+        SUB     C               ; 5 - y
+        LD      HL,ZXOFF        
+        ADD     A,(HL)          ; + xOff
+        LD      E,A
+        LD      A,5
+        SUB     B               ; 5 - x
+        LD      HL,ZYOFF        
+        ADD     A,(HL)          ; + yOff
+        LD      C,A             ; xy Y parm = 5-x+yOff
+        LD      B,E             ; xy X parm = 5-y + xOff
+        CALL    XY16            
+        POP     BC
+MKNOBT  DEC     C               ; 2 closing braces in C
+        LD      A,(YBIT)
+        RRCA
+        LD      (YBIT),A
+        JP      P,MKZRC1
+        DEC     B
+        JP      P,MKZERX
+        
+; Dump the bytes from the screen after the XY plot of the character is done        
+        PUSH    BC
+        LD      C,0             ; for (int y = 0; y < 4; y++)
+MKDUY   LD      B,0             ;   for (int x = 0; x < 3; x++)
+MKDUX   LD      A,C             ;       screen[x + (y << 4)]
+        SHIFT   L,4
+        ADD     A,B
+        LD      L,A
+        LD      H,SC1/256
+        LD      A,(HL)
+        LD      (IY),A
+        INC     IY
+        INC     B
+        LD      A,3
+        CP      B
+        JR      NZ,MKDUX        ; x<3
+        INC     C
+        LD      A,4
+        CP      C
+        JR      NZ,MKDUY        ; 2 closing braces in C
+        
+        POP     BC              ; Retrieve x, y
+        ENDLPB  ZXOFF
+        ENDLPB  ZYOFF
+        ENDLPB  ZCHAR
+        RET
+; Just draw the character on top of whatever is already there.        
+PNUM    PUSH    BC
+        LD      L,A
+        LD      E,A
+        LD      A,-5            ; -6 seems to mess up the screen
+        ADD     A,B
+        JP      P,PNUM1B
+        XOR     A
+PNUM1B  LD      B,A
+        LD      A,-5
+        ADD     A,C             ; Convert top-left to bottom right coords
+        JP      P,PNUM1A
+        XOR     A
+PNUM1A  LD      C,A
+        LD      H,0
+        LD      D,0
+        ADD     HL,HL
+        ADD     HL,DE           ; * 3
+        ADD     HL,HL
+        ADD     HL,HL           ; * 12
+        ADD     HL,HL
+        ADD     HL,HL
+        ADD     HL,HL           ; A * 12 * 8
+        LD      IX,ZEROB
+        EX      DE,HL
+        ADD     IX,DE           ; Offset of bit blit table for this character
+        LD      D,12*4
+        BIT     0,C             ; Y
+        JR      NZ,Y1
+        LD      D,0
+Y1      LD      A,B
+        AND     3               ; x portion
+        LD      E,A
+        ADD     A,A
+        ADD     A,E             ; 3 * x portion
+        ADD     A,A             ; * 6 (MAX 18)
+        ADD     A,A             ; * 12 (MAX 36)
+        ADD     A,D             ; MAX 84
+        LD      E,A
+        LD      D,0
+        ADD     IX,DE           ; Offset into the table for this character
+        LD      A,C             ; IX has ZEROB table position
+; Compute memory position on screen from x & y in BC        
+        AND     3EH
+        LD      L,A
+        LD      H,0
+        ADD     HL,HL
+        ADD     HL,HL
+        ADD     HL,HL           ; y portion * 16 bytes per line
+        LD      A,B
+        AND     3CH
+        SHIFT   R,2
+        LD      E,A
+        LD      D,0
+        ADD     HL,DE           ; + x portion
+        LD      DE,SC1
+        ADD     HL,DE           ; Offset of byte on screen      
+        LD      DE,BLACK*256+BLUE
+SCLOOP  PUSH    HL
+        PUSH    DE
+        LD      A,(ONOFF)       ; Note macros take care of quadrant for HL
+        CP      D
+        JP      Z,ANDMEM
+        CP      E
+        JP      Z,ANDMEM
+        BLT     ORMEM           ; Generates 256 bytes of instructions
+        JP      NXTSC2
+ANDMEM  BLT     ANDMEM
+NXTSC2  POP     DE
+        POP     HL
+        LD      A,RED
+        CP      E
+        JR      Z,PNUMO
+        LD      A,-8            ; Restart character
+        ADD     A,C
+        MOV     C,A
+        LD      A,2048/256
+        ADD     A,H
+        LD      H,A
+        LD      DE,BLACK*256+RED
+        JP      SCLOOP
+PNUMO   POP     BC
+        LD      A,6
+        ADD     B
+        LD      B,A
+        RET
+
+
+ELTO10S PUSH    BC
+        CALL    DIV10
+        ADD     A,'0'
+        LD      (IX),A
+        DEC     IX
+        POP     BC
+        LD      A,H
+        OR      L
+        OR      D
+        OR      E
+        RET     Z
+        DJNZ    ELTO10S
+        RET        
+        
+; Math lib
+;Inputs:
+;     DEHL
+;Outputs:
+;     DEHL is the quotient
+;     A is the remainder
+;     BC is 10
+
+Div10   ld bc,0D0AH
+        xor a
+        ex de,hl
+        add hl,hl
+        rla
+        add hl,hl
+        rla
+        add hl,hl
+        rla
+
+        add hl,hl
+        rla
+        cp c
+        jr c,$+4
+        sub c
+        inc l
+        djnz $-7
+
+        ex de,hl
+        ld b,16
+
+        add hl,hl
+        rla
+        cp c
+        jr c,$+4
+        sub c
+        inc l
+        djnz $-7
+        ret
+        
+CONOUT  LD      C,TUARTA+TDATA
+        OTIR
+        RET
+
+	LIST	ON
+PROG	EQU	$
+DSAV	EQU	(PROG-SHIFT+0FFH)/256
+	LIST	ON
+        ORG     ($/2048+1)*2048
+SC1     DS      2048
+SC2     DS      2048
+INVFCB	DS	33
+INVDAT	DS	384
+DISBUF	DS	128
+ROW1A	DS	55*3
+BOM	DS	100
+ALIENT	DS	10
+INVEXP	DS	150
+ZEROB   DS      4*3*8*NUMZER
+	ENTRY	INVADE
+INVADE  LD      DE,0
+        LD      HL,DSAV
+        LD      IX,SSIZE+2
+        LD      B,3
+        CALL    ELTO10S
+        LD      B,INTLEN
+        LD      HL,INTRO
+        CALL    CONOUT
+       
+	LD	DE,100H
+	LD	HL,SHIFT
+	LD	BC,PROG-SHIFT
+	LDIR
+	LD	C,0
+	CALL	5
+INTRO   DB      'save spaceinv.com '
+SSIZE   DB      '   '        
+INTLEN  EQU     $-INTRO
+	LIST	ON
+	END	INVADE
+ 

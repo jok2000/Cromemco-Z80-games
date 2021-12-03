@@ -1,0 +1,38 @@
+STACK   .equ    0x5000
+SC1	.equ	0x5000          ; Needs 2048 bytes, has 0x1000 multiple assumption
+SC2	.equ	SC1+2048        ; Needs 2048 bytes
+DAZTAB	.equ	SC2+2048        ; Needs 8 bytes (haceked daztab for XY)
+DAZTB1	.equ	DAZTAB+0x100    ; Needs 8 bytes (single quadrant daztab)
+RANTAB  .equ    DAZTB1+0x100    ; Needs 256 bytes (Random numbers for sounds)
+CRATF   .equ    RANTAB+0x100    ; Needs 128 bytes (Crater terrain replacement data)
+IIIIII  .equ    CRATF+0x100+64  ; Needs 32 bytes after (Interrupt vector)
+TUARTA  .equ    0
+TUARTB	.equ	32 
+TDATA   .equ    1
+IMASKP	.equ	3 
+ICOMMP	.equ	2 	
+TIMERS  .equ    5
+TMPORT  .equ    10
+BUTTNP	.equ	4 
+BUTTNF	.equ	1 
+BUTTNL	.equ	16 
+BUTTNR	.equ	32
+
+TUARTA_CMD      .equ TUARTA+ICOMMP
+TUARTA_MASK     .equ TUARTA+IMASKP
+TIMERA_1        .equ TUARTA+TIMERS
+TIMERA_2        .equ TIMERA_1+1
+TIMERA_3        .equ TIMERA_2+1
+TIMERA_4        .equ TIMERA_3+1
+TIMERA_5        .equ TIMERA_4+1
+TUARTB_CMD      .equ TUARTB+ICOMMP
+TUARTB_MASK     .equ TUARTB+IMASKP
+TIMERB_1        .equ TUARTB+TIMERS
+TIMERB_2        .equ TIMERB_1+1
+TIMERB_3        .equ TIMERB_2+1
+TIMERB_4        .equ TIMERB_3+1
+TIMERB_5        .equ TIMERB_4+1
+
+DAZZ_COLOR      .equ 0xf
+DAZZ_ADDR       .equ 0xe
+

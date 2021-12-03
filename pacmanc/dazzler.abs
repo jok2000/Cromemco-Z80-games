@@ -1,0 +1,51 @@
+
+
+
+STACK   .equ    0x9700
+INTABLE .equ    STACK
+SC1	.equ	0x9800
+SC2	.equ	SC1+2048
+SC3     .equ    SC2+2048
+END_SCREENS   .equ    SC3+2048
+;DAZTAB	.equ	END_SCREENS
+;PRE_RANTAB  .equ    DAZTAB+0x100
+ZEROB   .equ    END_SCREENS+0x100
+
+TUARTA  .equ    0
+TDATA   .equ    1
+TIMERS  .equ    5
+TMPORT  .equ    10
+BUTTNP	.equ	4 
+BUTTNF	.equ	1 
+BUTTNL	.equ	16 
+BUTTNR	.equ	32
+TUARTA_CMD      .equ TUARTA+2
+TUARTA_MASK     .equ TUARTA+3
+TIMERA_1        .equ TUARTA+TIMERS
+TIMERA_2        .equ TIMERA_1+1
+TIMERA_3        .equ TIMERA_2+1
+TIMERA_4        .equ TIMERA_3+1
+TIMERA_5        .equ TIMERA_4+1
+
+JS1_JOY_1X      .equ 0x19       ; right = +ve, left = -ve
+JS1_JOY_1Y      .equ 0x1a       ; up = +ve, down = -ve
+JS1_JOY_2X      .equ 0x1b
+JS1_JOY_2Y      .equ 0x1c
+XPLO_TIMER      .equ TIMERA_2
+SHH_TIMER       .equ TIMERA_4   ; Disable during debugging
+DAZZ_COLOR      .equ 0xf
+DAZZ_ADDR       .equ 0xe
+FOUR_COLOR	.equ	0
+RGB_COLOR	.equ	1
+CTEST	.equ	128 
+BLACK	.equ	0 
+RED	.equ	1 
+GREEN	.equ	2 
+BLUE	.equ	4 
+CYAN	.equ	(GREEN+BLUE )
+MAGENT	.equ	(RED+BLUE)
+YELLOW	.equ	(RED+GREEN) 
+WHITE	.equ	(RED+GREEN+BLUE)
+SERIN   .equ    TUARTA+TDATA
+SEROUT  .equ    SERIN
+

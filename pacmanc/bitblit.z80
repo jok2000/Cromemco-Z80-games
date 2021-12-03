@@ -1,0 +1,833 @@
+	TITLE	Bit Blit Tester
+	LIST	ON,NOCOND,NOGEN
+;	LIST	ON,NOCOND
+	NAME	BITBLIT
+TORG	EQU	1100H
+TUARTA  EQU     0
+TDATA   EQU     1
+TMPORT  EQU     10
+INCM    MACRO   #1
+        LD      A,#1
+        INC     A
+        LD      #1,A
+        MEND
+SHIFT	MACRO	#4,#5
+	R#4CA
+SHIF1	DL	#5-1
+	IF	SHIF1	NE	0
+	R#4CA
+SHIF1	DL	SHIF1-1
+	ENDIF
+	IF	SHIF1	NE	0
+	R#4CA
+SHIF1	DL	SHIF1-1
+	ENDIF
+	IF	SHIF1	NE	0
+	R#4CA
+	ENDIF
+	MEND  
+PROFILE MACRO   #1
+        CALL    GETST
+        CALL    #1
+        CALL    GETEND
+        CALL    PDEFEL
+        MEND
+        
+MOV	MACRO	#6,#7
+	LD	A,#7
+	LD	#6,A
+	MEND
+LOOPB   MACRO   #1,#2
+        MOV     (#1),0
+        LD      A,0
+#1      EQU     $-1
+#1L     CP      #2
+        JP      Z,#1X
+        MEND
+ENDLPB  MACRO   #1
+        INCM    (#1)
+        JP      #1L
+#1X     EQU     $
+        MEND
+OUTP    MACRO   #6,#7
+        LD      A,#7
+        OUT     #6,A
+        MEND
+ORMEM   MACRO   #1
+        LD      A,(IX+#1)
+        OR      (HL)
+        LD      (HL),A
+        MEND
+ANDMEM  MACRO   #1
+        LD      A,(IX+#1)
+        CPL
+        AND     (HL)
+        LD      (HL),A
+        MEND
+BLTBYT  MACRO   #1,#2
+        #1      #2
+        INC     HL
+        LD      A,15
+        AND     L
+        JR      NZ,$+6 ; Crossed over to a right quadrant
+        LD      DE,2*256-16
+        ADD     HL,DE
+        MEND
+BLTLIN  MACRO   #1,#2
+        BIT     6,C
+        JR      Z,$+4
+        SET     2,H
+        RES     1,H
+        BIT     6,B
+        JR      Z,$+4
+        SET     1,H
+        BLTBYT  #1,#2
+        BLTBYT  #1,#2+1
+        #1      #2+2
+        INC     C
+        INC     C
+        LD      DE,16-2
+        ADD     HL,DE
+        LD      A,15
+        AND     L
+        CP      14      ; 14,15 are in a left quadrant
+        JR      C,$+6
+        LD      DE,0FE10H ; -2, 16
+        ADD     HL,DE
+        MEND
+BLTLIN1 MACRO   #1,#2
+        BIT     6,C
+        JR      Z,$+4
+        SET     2,H
+        RES     1,H
+        BIT     6,B
+        JR      Z,$+4
+        SET     1,H
+        BLTBYT  #1,#2
+        BLTBYT  #1,#2+1
+        #1      #2+2
+        MEND        
+BLT     MACRO   #1
+        BLTLIN  #1,0
+        BLTLIN  #1,3
+        BLTLIN  #1,6
+        BLTLIN1 #1,9
+        MEND
+	ORG	2000H-14
+SHIFT	LD	DE,2000H+PROG-DAZTB1-1
+	LD	HL,10EH+PROG-DAZTB1-1
+	LD	BC,PROG-DAZTB1
+        LDDR
+	JP	STARTA
+;       ORG     (($-1)/256+1) * 256
+DAZTB1  DB      1, 1 SHL 1, 1 SHL 4, 1 SHL 5, 1 SHL 2, 1 SHL 3, 1 SHL 6, 1 SHL 7 ; Official Dazzler memory layout (x+y*4)
+XY	PUSH	BC
+	EXX
+	POP	BC
+	LD	A,SC1/256
+SC	EQU	$-1
+	BIT	6,B
+	JR	Z,XY1
+	ADD	A,2
+XY1	BIT	6,C
+	JR	Z,XY2
+	ADD	A,4
+XY2	LD	H,A
+	LD	A,3CH
+	AND	B
+	RRCA
+	RRCA
+	LD	L,A
+	LD	A,3EH
+	AND	C
+	RLCA
+	RLCA
+	ADD	A,A
+	JR	NC,XY4
+	INC	H
+XY4	OR	L
+	LD	L,A
+	LD	A,3
+	AND	B
+	RRC	C
+	RLA
+	LD	C,A
+	LD	B,DAZTAB/256
+	LD	A,(BC)
+	JR	XY
+ONOFF	EQU	$-1
+XYP	MACRO	#1
+	#1	(HL)
+	LD	(HL),A
+	LD	A,8
+	ADD	A,H
+	LD	H,A
+	LD	A,B
+	MEND
+XYL	MACRO	#2
+	#2	(HL)
+	LD	(HL),A
+	EXX
+	RET
+	MEND
+BLACK	EQU	$-ONOFF-1
+	CPL
+	LD	B,A
+	XYP	AND
+	XYL	AND
+RED	EQU	$-ONOFF-1
+	LD	B,A
+	XYP	OR
+	CPL
+	XYL	AND
+BLUE	EQU	$-ONOFF-1
+	LD	B,A
+	CPL
+	XYP	AND
+	XYL	OR
+WHITE	EQU	$-ONOFF-1
+	LD	B,A
+	XYP	OR
+	XYL	OR
+TEST	EQU	$-ONOFF-1
+	LD	C,A
+	AND	(HL)
+	ADD	A,0FFH
+	LD	A,0
+	RLA
+	LD	B,A
+	LD	A,8
+	ADD	A,H
+        LD      H,A
+	LD	A,C
+	AND	(HL)
+	ADD	A,0FFH
+	LD	A,B
+	RLA
+	AND	A
+        EXX
+	RET
+        ORG     (($-1)/256+1) * 256
+DAZTAB	DB	1,4,2,8,10H,40H,20H,80H
+
+; This version of XY only plots in first quadrant in one color
+XY16    LD      HL,SC1
+        LD      A,3EH
+        AND     C
+        ADD     A,A
+        ADD     A,A
+        LD      E,A
+        LD      D,0
+        ADD     HL,DE
+        ADD     HL,DE
+        LD      A,B
+        SRL     A
+        SRL     A
+        LD      E,A
+        ADD     HL,DE
+        LD      A,3
+        AND     B
+        BIT     0,C
+        JR      Z,XY16A
+        ADD     A,4
+XY16A   LD      D,DAZTB1/256
+        LD      E,A
+        LD      A,(DE)
+        OR      (HL)
+        LD      (HL),A
+        RET
+        
+CLS     LD      HL,SC1
+        LD      DE,SC1+1
+        LD      BC,4095
+        LD      (HL),0
+        LDIR
+        RET
+        
+; Clear first character on screen plus bit blit dimensions        
+CLSZ    LD      DE,16
+        LD      B,4
+        LD      IX,SC1
+CLSZ1   LD      (IX),0
+        LD      (IX+1),0
+        LD      (IX+2),0
+        ADD     IX,DE
+        DJNZ    CLSZ1
+        RET
+
+; Make ZEROB table (bit blit table)
+; Hand compiled from the C version
+; C version does gymnastics so it can print pretty comments       
+YBIT    DS      1
+        
+MKZERO  LD      IY,ZEROB
+        LOOPB   ZCHAR,NUMZER
+        LOOPB   ZYOFF,2
+        LOOPB   ZXOFF,4
+MKZRX1  CALL    CLSZ            ; Uses IX
+        LD      B,5
+MKZERX  LD      C,5
+        MOV     (YBIT),1 SHL 5
+MKZRC1  LD      A,(ZCHAR)       ; int color = zero[c][x] & (1 << y);
+        ADD     A,A             ; max 108
+        LD      E,A
+        LD      D,0
+        LD      L,A
+        LD      H,0
+        ADD     HL,HL
+        ADD     HL,DE           ; C * 6
+        LD      E,B
+        ADD     HL,DE
+        LD      DE,ZERO
+        ADD     HL,DE
+        LD      A,(YBIT)
+        AND     A,(HL)
+        JR      Z,MKNOBT
+        PUSH    BC
+        LD      A,5             ; xy(5-y + xOff, 5-x + yOff, color); 
+        SUB     C               ; 5 - y
+        LD      HL,ZXOFF        
+        ADD     A,(HL)          ; + xOff
+        LD      E,A
+        LD      A,5
+        SUB     B               ; 5 - x
+        LD      HL,ZYOFF        
+        ADD     A,(HL)          ; + yOff
+        LD      C,A             ; xy Y parm = 5-x+yOff
+        LD      B,E             ; xy X parm = 5-y + xOff
+        CALL    XY16            
+        POP     BC
+MKNOBT  DEC     C               ; 2 closing braces in C
+        LD      A,(YBIT)
+        RRCA
+        LD      (YBIT),A
+        JP      P,MKZRC1
+        DEC     B
+        JP      P,MKZERX
+        
+; Dump the bytes from the screen after the XY plot of the character is done        
+        PUSH    BC
+        LD      C,0             ; for (int y = 0; y < 4; y++)
+MKDUY   LD      B,0             ;   for (int x = 0; x < 3; x++)
+MKDUX   LD      A,C             ;       screen[x + (y << 4)]
+        SHIFT   L,4
+        ADD     A,B
+        LD      L,A
+        LD      H,SC1/256
+        LD      A,(HL)
+        LD      (IY),A
+        INC     IY
+        INC     B
+        LD      A,3
+        CP      B
+        JR      NZ,MKDUX        ; x<3
+        INC     C
+        LD      A,4
+        CP      C
+        JR      NZ,MKDUY        ; 2 closing braces in C
+        
+        POP     BC              ; Retrieve x, y
+        ENDLPB  ZXOFF
+        ENDLPB  ZYOFF
+        ENDLPB  ZCHAR
+        RET
+        
+STARTA  LD	SP,1300H
+        OUTP    0EH,80H + SC1/512 ; Initialize the Dazzler
+        OUTP    0FH,079H
+        OUTP    0FH,07EH
+        OUTP    0FH,0D1H
+        CALL    RESTIM
+        MOV     (ONOFF),WHITE
+        PROFILE  MKZERO
+
+        LOOPB   FUNCS,2
+        CALL    CLS
+        PROFILE  PNUMTS
+        LD      HL,PNUM
+        LD      (PNUMFC),HL
+        ENDLPB  FUNCS
+
+        LD      C,0
+        CALL    5
+        
+PNUMTS  LD      BC,0
+        LOOPB   CGRP,6
+        LOOPB   CNUM,NUMZER
+        PUSH    BC
+        CALL    PNUMS
+PNUMFC  EQU     $-2        
+        POP     BC
+        LD      A,7
+        ADD     A,B
+        LD      B,A
+        CP      128-7
+        JP      M,NEXTC
+        LD      B,0
+        LD      A,7
+        ADD     C
+        LD      C,A
+        CP      128-7
+        JP      P,DONE
+NEXTC   ENDLPB  CNUM
+        ENDLPB  CGRP 
+DONE    RET
+
+CHARO	LD	A,6
+	LD	(CR),A
+PL1	LD	E,6
+	LD	D,B
+	LD	A,(HL)
+PL	RRCA
+	PUSH	AF
+	CALL	C,XY
+	DEC	B
+	POP	AF
+	DEC	E
+	JR	NZ,PL
+	LD	B,D
+	DEC	C
+	LD	A,0
+CR	EQU	$-1
+	DEC	A
+	LD	(CR),A
+	INC	HL
+	JR	NZ,PL1
+	RET
+
+PNUMS	LD	E,A
+	LD	D,0
+	LD	HL,0
+	ADD	HL,DE
+	ADD	HL,DE
+	ADD	HL,DE
+	LD	D,H
+	LD	E,L
+	LD	HL,ZERO
+	ADD	HL,DE
+        ADD     HL,DE
+	PUSH	BC
+	CALL	CHARO
+	POP	BC
+	LD	A,6
+	ADD	A,B
+	LD	B,A
+	RET
+;
+; Erase the spot the character will go then draw it
+PNUMCL  LD      L,A
+        MOV     H,(ONOFF)
+        LD      A,54
+        PUSH    HL
+        PUSH    BC
+        CALL    PNUM
+        POP     BC
+        POP     HL
+        MOV     (ONOFF),H
+        LD      A,L
+        
+; Just draw the character on top of whatever is already there.        
+PNUM    LD      L,A
+        LD      H,0
+        LD      E,A
+        LD      D,0
+        ADD     HL,HL
+        ADD     HL,DE           ; * 3
+        ADD     HL,HL
+        ADD     HL,HL           ; * 12
+        ADD     HL,HL
+        ADD     HL,HL
+        ADD     HL,HL           ; A * 12 * 8
+        LD      IX,ZEROB
+        EX      DE,HL
+        ADD     IX,DE           ; Offset of bit blit table for this character
+        LD      D,12*4
+        BIT     0,C             ; Y
+        JR      NZ,Y1
+        LD      D,0
+Y1      LD      A,B
+        AND     3               ; x portion
+        LD      E,A
+        ADD     A,A
+        ADD     A,E             ; 3 * x portion
+        ADD     A,A             ; * 6 (MAX 18)
+        ADD     A,A             ; * 12 (MAX 36)
+        ADD     A,D             ; MAX 84
+        LD      E,A
+        LD      D,0
+        ADD     IX,DE           ; Offset into the table for this character
+        LD      A,C             ; IX has ZEROB table position
+; Compute memory position on screen from x & y in BC        
+        AND     3EH
+        LD      L,A
+        LD      H,0
+        ADD     HL,HL
+        ADD     HL,HL
+        ADD     HL,HL           ; y portion * 16 bytes per line
+        LD      A,B
+        AND     3CH
+        SHIFT   R,2
+        LD      E,A
+        LD      D,0
+        ADD     HL,DE           ; + x portion
+        LD      DE,SC1
+        ADD     HL,DE           ; Offset of byte on screen      
+        LD      DE,BLACK*256+BLUE
+SCLOOP  PUSH    HL
+        PUSH    DE
+        LD      A,(ONOFF)       ; Note macros take care of quadrant for HL
+        CP      D
+        JP      Z,ANDMEM
+        CP      E
+        JP      Z,ANDMEM
+        BLT     ORMEM           ; Generates 256 bytes of instructions
+        JP      NXTSC2
+ANDMEM  BLT     ANDMEM
+NXTSC2  POP     DE
+        POP     HL
+        LD      A,RED
+        CP      E
+        RET     Z
+        LD      A,-6            ; Restart character
+        ADD     A,C
+        MOV     C,A
+        LD      A,2048/256
+        ADD     A,H
+        LD      H,A
+        LD      DE,BLACK*256+RED
+        JP      SCLOOP
+        
+ZERO	DB	14,25,21,19,14,0	; 0
+	DB	14,4,4,12,4,0           ; 1
+	DB	31,8,6,17,14,0          ; 2
+	DB	14,1,6,1,14,0           ; 3
+	DB	2,2,31,18,18,0          ; 4
+	DB	30,1,30,16,31,0         ; 5
+	DB	14,17,30,16,15,0        ; 6
+	DB	8,4,2,1,31,0            ; 7
+	DB	14,17,14,17,14,0        ; 8
+	DB	14,1,31,17,14,0		; 9
+	DB	0,0,0,0,0,0		; SPACE
+	DB	17,31,17,10,4,0		; A
+	DB	30,17,30,17,30,0        ; B
+	DB	14,17,16,17,14,0	; C
+	DB	30,17,17,17,30,0        ; D
+        DB      31,16,30,16,31,0        ; E
+	DB	16,16,31,16,31,0        ; F
+	DB	14,18,23,16,14,0        ; G
+	DB	17,17,31,17,17,0        ; H
+	DB	14,4,4,4,14,0		; I
+	DB	14,17,1,1,1,0           ; J
+	DB	9,10,12,10,9,0		; K
+	DB	31,16,16,16,16,0        ; L
+	DB	17,17,21,31,27,0        ; M
+	DB	17,19,21,25,17,0	; N
+	DB	14,17,17,17,14,0	; O
+	DB	16,16,30,17,30,0        ; P
+	DB	15,19,21,17,14,0        ; Q
+	DB	17,18,30,17,30,0	; R
+	DB	30,1,14,16,15,0         ; S
+	DB	4,4,4,4,31,0            ; T
+	DB	14,17,17,17,17,0	; U
+	DB	4,10,17,17,17,0         ; V
+	DB	17,27,21,17,17,0        ; W
+	DB	17,10,4,10,17,0		; X
+	DB	4,4,4,10,17,0		; Y
+	DB	31,8,4,2,31,0		; Z
+	DB	4,0,6,17,14,0           ; ?
+	DB	0,31,0,31,0,0           ; =
+	DB	18,12,30,18,12,12       ; Triangle invader
+	DB	18,12,30,18,30,12       ; Bubble invader 
+	DB	45,63,45,30,12,18       ; Armed invader 
+	DB	51,12,63,45,63,30       ; skeleton invader
+	DB	4,0,4,4,4,0             ; !
+	DB	13,54,54,13,0,0         ; @
+        DB      31,41,41,30,0,0         ; Blinking saucer left side
+	DB	2,4,2,1,2,4             ; lightning state 1
+	DB	4,2,1,2,1,2             ; lightning state 2
+	DB	6,3,6,3,2,2             ; twirl bomb state 1
+	DB	2,6,3,6,2,2             ; twirl bomb state 2
+	DB	2,2,2,2,7,2             ; T bomb state 1
+	DB	2,7,2,2,2,2             ; T bomb state 2
+	DB	60,10,10,60,0,0         ; Blinking saucer right side
+	DB	5,6,31,37,47,38         ; invader pushing left (bug in listing)
+	DB	63,63,63,63,63,63       ; block
+INVCHR  EQU     ($-ZERO) / 6
+TABM	DB	12H,0CH,1EH,12H,0CH,0CH ; triangle state 1
+        DB      2DH,12H,1EH,12H,0CH,0CH ; triangle state 2
+	DB	2DH,3FH,2DH,1EH,0CH,12H ; armed state 1 / down
+	DB	12H,0CH,3FH,2DH,2DH,12H ; armed state 2 / up
+	DB	12H,33H,3FH,2DH,3FH,1EH ; skeleton state 1 / closed
+	DB	33H,0CH,3FH,2DH,3FH,1EH ; skeleton state 2 / open
+	DB	12H,0CH,1EH,12H,1EH,0CH ; bubble state 1 / big
+	DB	0,12H,0CH,0CH,0,0       ; bubble state 2 / small
+NUMZER  EQU     ($-ZERO) / 6
+
+; Library
+; BINHEX        Convert A to ASCII hex
+; CONOUT        HL, B
+; ELTODEC        Convert elapsed time to decimal and store in ELBUF
+
+;   Should clear buffer to spaces or zeros as desired. B is length of buffer
+; ELTO10        Leading zeros. Convert DEHL to decimal and store in (IX) to (IX+8), right justified.
+; ELTO10S       No leading zeros. Convert DEHL to decimal and store in (IX) to (IX+8), right justified.
+; GETST         Get start time in nanoseconds
+; GETEND        Get end time in nanoseconds
+; HEXSTR        Convert binary data to ASCII hex string B = size, IX = pointer to data HL pointer to output location
+; PDEFEL        Print default elapsed time message
+; DUMPTIM       Dump out the Start, elapsed and delta time values in hex
+
+DEFALT  DB      'Default'
+DEFLEN  EQU     $-DEFALT
+ELMSG   DB      ' elapsed time: '
+ELSBUF  DS      1
+        DB      '.'
+ELBUF   DS      9
+        DB      'uS',13,10
+ELMLEN  EQU     $-ELMSG
+
+CONOUT  LD      C,TUARTA+TDATA
+        OTIR
+        RET
+PDEFEL  CALL    GETDEL
+        LD      HL,ELBUF
+        CALL    ELTODEC
+        LD      A,(DELTIME+4)
+        ADD     A,'0'
+        LD      (ELSBUF),A
+        LD      HL,DEFALT
+        LD      B,DEFLEN+ELMLEN
+        CALL    CONOUT
+        CALL    DUMPTIM
+        RET      
+RESTIM  OUTP    TMPORT,0
+        RET
+GETEND  LD      HL,ENDTIME
+        JR      GETTIME
+GETST   LD      HL,STRTIME
+GETTIME LD      C,TMPORT
+        LD      B,TIMSIZ
+        INIR
+        RET  
+BILLION DB      00,0CAH,9AH,3BH        
+GETDEL  LD      HL,ENDTIME
+        LD      IX,STRTIME
+        LD      DE,DELTIME
+        LD      B,4
+        XOR     A
+GDEL1   LD      A,(HL)
+        SBC     A,(IX)
+        LD      (DE),A
+        INC     DE
+        INC     IX
+        INC     HL
+        DJNZ    GDEL1
+        JR      NC,GDEL5
+        XOR     A
+        LD      HL,BILLION
+        LD      DE,DELTIME
+        LD      B,4
+GDEL2   LD      A,(DE)
+        ADC     A,(HL)
+        LD      (DE),A
+        INC     DE
+        INC     HL
+        DJNZ    GDEL2
+        SCF
+GDEL5   LD      HL,ENDTIME+4
+        LD      IX,STRTIME+4
+        LD      DE,DELTIME+4
+        LD      B,8
+GDEL3   LD      A,(HL)
+        SBC     A,(IX)
+        LD      (DE),A
+        INC     DE
+        INC     IX
+        INC     HL
+        DJNZ    GDEL3
+        RET
+        
+WRTDEL  LD      B,8
+        LD      IX,DELTIME
+        CALL    HEXSTR
+        MOV      (HL),'.'
+        INC     HL
+        LD      B,4
+        CALL    HEXSTR
+        OUTP    TUARTA+TDATA,' '
+        CALL    ELTODEC
+        LD      HL,ELBUF
+        LD      B,9
+        CALL    CONOUT
+        RET
+CRLF    DB      13,10
+OUTBUF  DS      24
+
+; Dump the time values in hex
+DUMPTIM LD      IX,STRTIME
+        LD      B,12
+        LD      HL,OUTBUF
+        CALL    HEXSTR
+        LD      HL,OUTBUF
+        LD      B,8
+        CALL    CONOUT
+        OUTP    TUARTA+TDATA,'-'
+        LD      B,16
+        CALL    CONOUT
+        LD      HL,CRLF
+        LD      B,2
+        CALL    CONOUT
+        LD      IX,ENDTIME
+        LD      B,12
+        LD      HL,OUTBUF
+        CALL    HEXSTR
+        LD      HL,OUTBUF
+        LD      B,8
+        CALL    CONOUT
+        OUTP    TUARTA+TDATA,'-'
+        LD      B,16
+        CALL    CONOUT
+        LD      HL,CRLF
+        LD      B,2
+        CALL    CONOUT
+        LD      IX,DELTIME
+        LD      B,12
+        LD      HL,OUTBUF
+        CALL    HEXSTR
+        LD      HL,OUTBUF
+        LD      B,8
+        CALL    CONOUT
+        OUTP    TUARTA+TDATA,'-'
+        LD      B,16
+        CALL    CONOUT
+        LD      HL,CRLF
+        LD      B,2
+        CALL    CONOUT
+        RET
+        
+; HEXSTR        Convert binary data to ASCII hex string B = size, IX = pointer to data HL pointer to text out        
+HEXSTR  CALL    HEXWRT
+        INC     IX
+        DJNZ    HEXSTR
+        RET
+HEXWRT  LD      A,(IX)
+        LD      D,A
+        SHIFT   R,4
+        AND     15
+        CALL    BINHEX
+        LD      (HL),A
+        INC     HL
+        LD      A,15
+        AND     D
+        CALL    BINHEX
+        LD      (HL),A
+        INC     HL
+        RET
+BINHEX  ADD     A,'0'
+        CP      '9'+1
+        RET     C
+        ADD     A,7
+        RET
+INTRO   DB      'Bit Blit test routine. save bitblit.com '
+SSIZE   DB      '   '
+        DB      13,10
+INTLEN  EQU     $-INTRO
+ELTODEC LD      HL,ELBUF
+        LD      DE,ELBUF+1
+        MOV     (HL),' '
+        LD      BC,8
+        LDIR
+        LD      IX,ELBUF+8
+        LD      HL,(DELTIME)
+        LD      DE,(DELTIME+2)
+        LD      B,9
+ELTO10  PUSH    BC
+        CALL    DIV10
+        ADD     A,'0'
+        LD      (IX),A
+        DEC     IX
+        POP     BC
+        DJNZ    ELTO10
+        RET
+ELTO10S PUSH    BC
+        CALL    DIV10
+        ADD     A,'0'
+        LD      (IX),A
+        DEC     IX
+        POP     BC
+        LD      A,H
+        OR      L
+        OR      D
+        OR      E
+        RET     Z
+        DJNZ    ELTO10S
+        RET        
+        
+; Math lib
+;Inputs:
+;     DEHL
+;Outputs:
+;     DEHL is the quotient
+;     A is the remainder
+;     BC is 10
+
+Div10   ld bc,0D0AH
+        xor a
+        ex de,hl
+        add hl,hl
+        rla
+        add hl,hl
+        rla
+        add hl,hl
+        rla
+
+        add hl,hl
+        rla
+        cp c
+        jr c,$+4
+        sub c
+        inc l
+        djnz $-7
+
+        ex de,hl
+        ld b,16
+
+        add hl,hl
+        rla
+        cp c
+        jr c,$+4
+        sub c
+        inc l
+        djnz $-7
+        ret
+
+PROG	EQU	$
+DSAV	EQU	(PROG-SHIFT+0FFH)/256
+	ENTRY	BITBLIT
+BITBLIT 
+        LD      DE,0
+        LD      HL,DSAV
+        LD      IX,SSIZE+2
+        LD      B,3
+        CALL    ELTO10S
+        LD      B,INTLEN
+        LD      HL,INTRO
+        CALL    CONOUT
+
+     	LD	DE,100H
+	LD	HL,SHIFT
+	LD	BC,PROG-SHIFT
+	LDIR
+	LD	C,0
+	CALL	5
+NTRSIZ  EQU     $-INTRO
+TIMSIZ  EQU     12
+STRTIME DS      TIMSIZ
+ENDTIME DS      TIMSIZ
+DELTIME DS      TIMSIZ    
+ZEROB   DS      4*3*8*NUMZER
+        ORG     ($/2048+1)*2048
+SC1     DS      2048
+SC2     DS      2048
+	END	BITBLIT
+

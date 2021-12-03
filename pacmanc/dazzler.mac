@@ -1,0 +1,283 @@
+	.macro  INCM   b 
+	LD      A,b    
+	INC     A    
+	LD      b,A    
+	.endm 	     
+         
+        .macro  SHIFT d,e 
+        .rept   e
+        r'd'ca
+        .endm
+	.endm
+        
+        .macro  PROFILE   a 
+	CALL 	 GETST    
+	CALL 	 a    
+	CALL 	 GETEND    
+	CALL 	 PDEFEL    
+	.endm
+         
+        .macro  MOV   f,g 
+	LD A,g    
+	LD f,A    
+	.endm
+	 
+        .macro  LOOPB   a,b 
+	MOV    (a),#0    
+	LD     A,#0    
+a 	.equ    .-1   
+a'L:    CP      b
+	JP 	 Z,a'X
+        .endm
+         
+        .macro  ENDLPB   a 
+	INCM   (a)    
+	JP 	 a'L    
+a'X:    
+	.endm
+
+        .macro GET      a
+        LD      A,#0
+a       .equ    .-1
+        .endm
+        
+	.macro	COLOR b
+	MOV	(ONOFF),#b  
+	.endm	   
+	
+        .macro  PLOT x,y
+ 	LD	BC,x*256+y
+ 	.endm	
+        
+        .macro  OUTP   f,g 
+	LD A,g    
+	OUT f,A    
+	.endm
+
+        .macro  LINEH
+	CALL	XY
+	INC	B  
+	DEC	D  
+	JR	NZ,.-5
+        .endm
+        
+        .macro  LINEV
+	CALL	XY
+	INC	C 
+	DEC	D  
+	JR	NZ,.-5  
+        .endm
+        
+	.macro	XYP	b
+	b	(HL)
+	LD	(HL),A
+	LD	A,#8
+	ADD	A,H
+	LD	H,A
+	LD	A,B
+	.endm
+
+	.macro	XYL	b
+	b	(HL)
+	LD	(HL),A
+	EXX
+	RET
+	.endm
+
+	 .macro  ORMEM   offset
+	 LD     A,offset(IX)    
+	 OR     (HL)    
+	 LD     (HL),A    
+	 .endm
+         
+	 .macro  ANDMEM   offset
+	 LD     A,offset(IX)    
+	 CPL     
+	 AND    (HL)    
+	 LD     (HL),A    
+	.endm
+
+	.macro  BLTBYT   op, base, offset, label, skip
+       
+	op      base+offset
+	INC     HL    
+	LD      A,#15    
+	AND     L    
+	JR 	NZ,label'base'offset'op'next     ; Crossed over to a right quadrant
+        LD      A,H             
+	LD      DE,#512-16      
+        ADD     HL,DE
+	XOR     H
+        AND     #4                      ; Bit 3 needs to stay the same 
+	JR	NZ,skip
+label'base'offset'op'next: 
+	.endm 	     
+	
+        .macro  BLTLIN3xa   op, base, label 
+	BIT 	 6,C    
+	JR 	 Z,.+4    
+	SET 	 2,H    
+	RES 	 1,H    
+	BIT 	 6,B    
+	JR 	 Z,.+4    
+	SET 	 1,H    
+	BLTBYT  op, base, 0, label, label'base'op'skip1
+	BLTBYT  op, base, 1, label, label'base'op'skip2
+	op	2+base
+        LD      DE,#16-2
+	JR	'label'base'op'skip2
+label'base'op'skip1:
+        LD      DE,#16-1
+label'base'op'skip2:
+	INC     C    
+	INC     C    
+	ADD     HL,DE    
+	LD      A,#15    
+	AND     L    
+	CP      #14   ; 14,15 are in a left quadrant
+	JR 	 C,label'base'op'next   
+	LD      DE,#0x0FE10   ; -2, 16  
+	ADD     HL,DE    
+label'base'op'next:        
+	.endm
+
+	.macro  BLTLIN3xb   op, base , label
+      
+	BIT 	6,C    
+	JR 	Z,.+4    
+	SET 	2,H    
+	RES 	1,H    
+	BIT 	6,B    
+	JR 	Z,label'base'op
+	SET 	1,H    
+label'base'op:  
+	BLTBYT  op,base,0,label,label'base'op'skip
+	BLTBYT  op,base,1,label,label'base'op'skip
+	op	base+2
+label'base'op'skip:
+	.endm  
+	 
+	.macro  BLTLIN2xa   op, base, label
+      
+	BIT 	 6,C    
+	JR 	 Z,.+4    
+	SET 	 2,H    
+	RES 	 1,H    
+	BIT 	 6,B    
+	JR 	 Z,.+4    
+	SET 	 1,H    
+	BLTBYT  op, base, 0, label, 'label'base'op'skip
+	op	base+1
+'label'base'op'skip:
+ 	INC     C    
+	INC     C    
+	LD      DE,#16-1    
+	ADD     HL,DE    
+	LD      A,#15    
+	AND     L    
+	CP      #15   ; 15 is in a left quadrant
+	JR 	 C,'label'base'op'next   
+	LD      DE,#0x0FE10   ; -1, 16     
+	ADD	HL,DE    
+'label'base'op'next:
+	.endm
+
+	.macro  BLTLIN2xb   op,base,label 
+      
+	BIT 	6,C    
+	JR 	Z,.+4    
+	SET 	2,H    
+	RES 	1,H    
+	BIT 	6,B    
+	JR 	Z,label'base'op
+	SET 	1,H 
+label'base'op:       
+        BLTBYT  op, base, 0, label, label'base'op'skip 
+	op	base+1
+label'base'op'skip:	
+	.endm     
+        
+       	.macro  BLTLIN1xa   op, base, label
+      
+	BIT 	 6,C    
+	JR 	 Z,.+4    
+	SET 	 2,H    
+	RES 	 1,H    
+	BIT 	 6,B    
+	JR 	 Z,.+4    
+	SET 	 1,H    
+	op	base
+'label'base'op'skip:
+ 	INC     C    
+	INC     C     
+	ADD     HL,DE    
+	.endm
+
+	.macro  BLTLIN1xb   op,base,label 
+      
+	BIT 	6,C    
+	JR 	Z,.+4    
+	SET 	2,H    
+	RES 	1,H    
+	BIT 	6,B    
+	JR 	Z,label'base'op
+	SET 	1,H 
+label'base'op:       
+	op	base
+	.endm     
+
+        
+; 3x4 blit
+	.macro  BLT	op 
+	BLTLIN3xa	op,0,b3x4   
+	BLTLIN3xa	op,3,b3x4    
+	BLTLIN3xa	op,6,b3x4
+	BLTLIN3xb	op,9,b3x4    
+	.endm
+
+; 3x4 blit 1 left clip
+       
+        .macro  BLTSKIP op
+	BLTLIN2xa        op,1,b2x4
+	BLTLIN2xa        op,4,b2x4
+	BLTLIN2xa        op,7,b2x4
+	BLTLIN2xb        op,10,b2x4
+        .endm
+        
+; 3x4 blit 2 left clip
+         .macro  BLTSKIP2 op
+        LD     DE,#16
+	BLTLIN1xa        op,2,b1x4
+	BLTLIN1xa        op,5,b1x4
+	BLTLIN1xa        op,8,b1x4
+	BLTLIN1xb        op,9,b1x4
+        .endm
+
+; 2x2 blit
+	.macro  BLT2    op
+	BLTLIN2xa        op,0,b2x2
+	BLTLIN2xb        op,3,b2x2
+	.endm
+
+; 2x2 blit left clip
+	.macro  BLT2SKIP op
+        LD      DE,#16   
+	BLTLIN1xa        op,1,b1x2
+	BLTLIN1xb        op,4,b1x2
+	.endm
+        
+; 2x3 blit   
+	.macro  BLT3    op 
+	BLTLIN2xa        op,0,b2x3
+	BLTLIN2xa        op,3,b2x3
+        BLTLIN2xb        op,6,b2x3
+	.endm
+
+; 2x3 blit left clip
+	.macro  BLT3SKIP    op
+        LD      DE,#16   
+	BLTLIN1xa        op,1,b1x3
+	BLTLIN1xa        op,4,b1x3
+        BLTLIN1xb        op,7,b1x3
+	.endm
+        

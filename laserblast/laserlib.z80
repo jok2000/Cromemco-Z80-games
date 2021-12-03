@@ -1,0 +1,191 @@
+; Joystick 1 X is port 25 (19h)
+; Joystick 1 Y is port 26 (1Ah)
+; Speaker is port 25 (19h)
+; Sw1 Port 24 B0
+; Sw2 Port 24 B1
+; Sw3 Port 24 B2
+; Sw4 Port 24 B3
+
+; Joystick 2 X is port 27 (1Bh)
+; Joystick 2 Y is port 28 (1Ch)
+; Speaker is port 27 (1Bh)
+; Sw1 Port 24 B4
+; Sw2 Port 24 B5
+; Sw3 Port 24 B6
+; Sw4 Port 24 B7
+
+; Page 9
+	ENTRY	IR
+IR:	LD	HL,RANTAB
+	LD	B,8
+	LD	A,(HL)
+RAND1:	RLCA
+	RLCA
+	RLCA
+	XOR	(HL)
+	RLA
+	RLA
+	DEC	HL
+	DEC	HL
+	DEC	HL
+	RL	(HL)
+	INC	HL
+	RL	(HL)
+	INC	HL
+	RL	(HL)
+	INC	HL
+	LD	A,(HL)
+	RLA
+	LD	(HL),A
+	DJNZ	RAND1
+	LD	(100H),A
+	RET
+	DS	4
+RANTAB	EQU	$-1
+
+	ENTRY	INTSET
+INTSET:	PUSH	AF
+	PUSH	HL
+	LD	A,0C3H
+	LD	(0),A
+	LD	(8),A
+	LD	(18H),A
+	LD	(30H),A
+	LD	HL,FIRE1
+	LD	(1),HL
+	LD	HL,FIRE2
+	LD	(9),HL
+	LD	HL,XPLO1
+	LD	(19H),HL
+	LD	HL,XPLO2
+	LD	(31H),HL
+	LD	A,4BH ; Timers 1,2,3,4
+	OUT	3,A
+	POP	HL
+	POP	AF
+	EI
+	RET
+      
+	ENTRY	FIRE
+FIRE:	PUSH	AF
+	LD	A,(HL)
+	CP	1
+	JR	Z,F1
+	XOR	A
+	LD	(CF2),A
+	LD	A,128
+	LD	(CF2A),A
+	OUT	6,A
+	POP	AF
+	RET
+; Page 10        
+F1:	XOR	A
+	LD	(CF1),A
+	LD	A,128
+	LD	(CF1A),A
+	OUT	5,A
+	POP	AF
+	RET
+      
+	ENTRY	XPLODE
+XPLODE:	PUSH	AF
+	LD	A,(HL)
+	CP	1
+	JR	Z,X1
+	LD	A,1
+	LD	(XF1),A
+	OUT	7,A
+	POP	AF
+	RET
+X1:	LD	A,1
+	LD	(XF2),A
+	OUT	8,A
+	POP	AF
+	RET
+	
+; Fire1 interrupt handler
+FIRE1:	DI
+	PUSH	AF
+	LD	A,(CF1)
+	INC	A
+	LD	(CF1),A
+	RRCA
+	LD	A,(CF1A)
+	JR	C,FIRE1A
+	DEC	A
+	LD	(CF1A),A
+	JR	Z,XIT
+FIRE1A:	OUT	5,A
+	LD	A,(N1)
+	CPL
+	LD	(N1),A
+	OUT	19H,A	; Speaker 1 port
+XIT:	POP	AF
+	EI
+	RET
+
+; Fire2 Interrupt handler	
+FIRE2:	DI
+	PUSH	AF
+	LD	A,(CF2)
+	INC	A
+	LD	(CF2),A
+	RRCA
+	LD	A,(CF2A)
+	JR	C,FIRE2A
+	DEC	A
+	LD	(CF2A),A
+	JR	Z,XIT
+FIRE2A:	OUT	6,A
+	LD	A,(N2)
+	CPL
+	LD	(N2),A
+	OUT	1BH,A
+	POP	AF
+	EI
+	RET
+	
+XPLO1:	DI
+	PUSH	AF
+	LD	A,(XF1)
+	INC	A
+	CP	128
+	JR	Z,XIT
+; Page 11        
+	LD	(XF1),A
+	OUT	7,A
+	LD	A,(N3)
+	CPL
+	LD	(N3),A
+	OUT	19H,A	; speaker 1 port
+	POP	AF
+	EI
+	RET
+	
+XPLO2:	DI
+	PUSH	AF
+	LD	A,(XF2)
+	INC	A
+	CP	128
+	JR	Z,XIT
+	LD	(XF2),A
+	OUT	8,A
+	LD	A,(N4)
+	CPL
+	LD	(N4),A
+	OUT	1BH,A	; speaker 2 port
+	POP	AF
+	EI
+	RET
+N1:	DB	127
+N2:	DB	127
+N3:	DB	127
+N4:	DB	127
+CF1:	DS	1
+CF2:	DS	1
+CF1A:	DS	1
+CF2A:	DS	1
+XF1:	DS	1
+XF2:	DS	1
+	END
+

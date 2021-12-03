@@ -1,0 +1,140 @@
+	.macro	INCM	b
+	LD	A,b
+	INC	A
+	LD	b,A
+	.endm
+
+	.macro	SHIFT	d,e
+	.rept	e
+	r'd'ca
+	.endm
+	.endm
+
+	.macro	PROFILE	a
+	CALL	GETST
+	CALL	a
+	CALL	GETEND
+	CALL	PDEFEL
+	.endm
+
+	.macro	MOV	f,g
+	LD	A,g
+	LD	f,A
+	.endm
+
+	.macro	LOOPB	a,b
+	LD	A,b
+	LD	(a'V),A
+	MOV	(a),#0
+	LD	A,#0
+a	.equ	.-1
+a'L:	CP	#0
+a'V	.equ	.-1
+	JP	Z,a'X
+	.endm
+
+	.macro	ENDLPB	a
+	INCM	(a)
+	JP	a'L
+a'X	.equ	.
+	.endm
+
+	.macro	OUTP	f,g
+	;LD	A,g
+	;OUT	(f),A
+	.endm
+
+	.macro	ORMEM	b
+	LD	A,b(IX)
+	OR	(HL)
+	LD	(HL),A
+	.endm
+
+	.macro	ANDMEM	b
+	LD	A,b(IX)
+	CPL
+	AND	(HL)
+	LD	(HL),A
+	.endm
+
+	.macro	BLTBYT	a,b
+	a	b
+	INC	HL
+	LD	A,#15
+	AND	L
+	JR	NZ,.+6	;	Crossed over to a right quadrant
+	LD	DE,#2*256-16
+	ADD	HL,DE
+	.endm
+
+	.macro	BLTLIN	a,b
+	BIT	6,C
+	JR	Z,.+4
+	SET	2,H
+	RES	1,H
+	BIT	6,B
+	JR	Z,.+4
+	SET	1,H
+	BLTBYT	a,b
+	BLTBYT	a,b+1
+	a	b+2
+	INC	C
+	INC	C
+	LD	DE,#16-2
+	ADD	HL,DE
+	LD	A,#15
+	AND	L
+	CP	#14	;	14,15 are in a left quadrant
+	JR	C,.+6
+	LD	DE,#0x0FE10	; -2, 16
+	ADD	HL,DE
+	.endm
+
+	.macro	BLTLIN1	a,b
+	BIT	6,C
+	JR	Z,.+4
+	SET	2,H
+	RES	1,H
+	BIT	6,B
+	JR	Z,.+4
+	SET	1,H
+	BLTBYT	a,b
+	BLTBYT	a,b+1
+	a	b+2
+	.endm
+
+	.macro	BLT	a
+	BLTLIN	a,0
+	BLTLIN	a,3
+	BLTLIN	a,6
+	BLTLIN1	a,9
+	.endm
+
+	.macro	XYP	b
+	b	(HL)
+	LD	(HL),A
+	LD	A,#8
+	ADD	A,H
+	LD	H,A
+	LD	A,B
+	.endm
+
+	.macro	XYL	b
+	b	(HL)
+	LD	(HL),A
+	EXX
+	RET
+	.endm
+        .macro PUT      a
+	LD	A,a
+	CALL	PNUM
+	.endm
+        
+        .macro COLOR a
+	MOV	(ONOFF),a
+	.endm
+        
+        .macro  GET a
+	LD	A,#0
+a	.equ	.-1
+	.endm
