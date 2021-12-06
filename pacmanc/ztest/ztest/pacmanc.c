@@ -994,7 +994,7 @@ struct tagAttract attractMsgs[18] = {
 	{20,RGB_GREEN, {64 + 3 * 5, 55 - 3},  "\"CLYDE\"\xff"},
 	{1,RGB_WHITE, {64 - 4 * 4, 85 - 3}, "@ 10 PTS\xff"},
 	{60,RGB_WHITE, {64 - 4 * 4, 95 - 3}, "n  10 PTS\xff"},
-	{1, RGB_MAGENTA, {64 - 9 * 5, 127 - 7}, "c 1982/2021 MDF & JOK\xff"}
+	{1, RGB_MAGENTA, {64 - 9 * 5, 127 - 7}, "c 1982 OK\xff"}
 };
 
 void ghostMsgOut(struct tagAttract *a)

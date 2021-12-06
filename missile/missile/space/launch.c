@@ -22,7 +22,6 @@ int main()
 {
 	int choice = 0;
 	done = 0;
-	//printf("Space Invaders for Cromemco Dazzler.  (c) 1982 2020 Jeff Kesner, Matthew Francey\n");
 	//printf("Refactored from Cromemco Macro Assembler to sdcc 2020\n");
 	do
 	{

@@ -1,5 +1,5 @@
 # Cromemco-Z80-games
-These games are being distributed under the GPL.  (c) Jeff Kesner 1979-1981, 2021-2022.
+These games are being distributed under the GPL.  (c) Oliver Kesner 1979-1981.
 
 
 
@@ -22,8 +22,8 @@ and debugging them.  I hope to get back to removing the typos soon.
 
 There are features that I have added to the Cromemco emulation.   I will be asking for 
 a branch and pull request for these sometime soon over at z80-pack.  The key part of
-this is the Cromemco Dazzler page flipping that was use for a multi-color display.
-This does not make since within the emulation environment, so I added two non-standard
+this is the Cromemco Dazzler page flipping that was used for a multi-color display.
+This does not make sense within the emulation environment, so I added two non-standard
 modes to the emulator and changed the Z80 code to use them instead of the interrupt-
 driven page-flipping.
 
