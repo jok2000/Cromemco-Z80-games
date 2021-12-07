@@ -300,10 +300,9 @@ _MAZE::
 	
 _PRESENTEDBY::
 	.db	RED
-	.ascis	'*** PAC-MAN ***'
+	.ascis	'*** PAC-MAN(TM) ***'
 	.db	WHITE,-1
-	.ascis	'THE EXACT COPY'  
+	.ascis	'BASED GAME'  
 	.ascis	'PRESENTED HERE'  
-	.ascis	'BY JEFF KESNER AND'  
-	.ascis	'MATTHEW FRANCEY'
+	.ascis	'BY OLIVER KESNER'  
 	.db	-1,RED  

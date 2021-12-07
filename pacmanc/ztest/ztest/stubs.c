@@ -33,8 +33,8 @@ char PRESENTEDBY[] =
 	"\0x01*** PAC-MAN **\0xaa"
 	"\0x07THE EXACT COP\xd9"
 	"PRESENTED HER\0xc5"
-	"BY JEFF KESNER AN\0xc4"
-	"MATTHEW FRANCEY\0xff\0x01"
+	"BY OLIVER KESNER AN\0xc4"
+	"A FRIEND0xff\0x01"
 };
 
 struct tagBlitTable ZEROP[1] = { {0,0,0} };
