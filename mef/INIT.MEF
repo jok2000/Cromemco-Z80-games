@@ -1,0 +1,142 @@
+/*
+ * init.mef		86-11-21
+ */
+	com[ 0].name="UPPER";	com[ 0].func=&doUPPER;
+	com[ 1].name="bye";	com[ 1].func=&dobye;
+	com[ 2].name="cat";	com[ 2].func=&docat;
+	com[ 3].name="chat";	com[ 3].func=&dochat;
+	com[ 4].name="chmod";	com[ 4].func=&dochmod;
+	com[ 5].name="chown";	com[ 5].func=&dochown;
+	com[ 6].name="date";	com[ 6].func=&dodate;
+	com[ 7].name="debug";	com[ 7].func=&dodebug;
+	com[ 8].name="echo";	com[ 8].func=&doecho;
+	com[ 9].name="ed";	com[ 9].func=&doed;
+	com[10].name="epoch";	com[10].func=&doepoch;
+	com[11].name="exit"; 	com[11].func=&doexit;
+	com[12].name="f";	com[12].func=&dof;
+	com[13].name="fortune";	com[13].func=&dofortune;
+	com[14].name="gfile";	com[14].func=&dogfile;
+	com[15].name="hack";	com[15].func=&dohack;
+	com[16].name="hello";	com[16].func=&dohello;
+	com[17].name="help";	com[17].func=&dohelp;
+	com[18].name="iam";	com[18].func=&doiam;
+	com[19].name="ic";	com[19].func=&doic;
+	com[20].name="lm";	com[20].func=&dolm;
+	com[21].name="log";	com[21].func=&dolog;
+	com[22].name="login";	com[22].func=&dologin;
+	com[23].name="lower";	com[23].func=&dolower;
+	com[24].name="ls";	com[24].func=&dols;
+	com[25].name="more";	com[25].func=&domore;
+	com[26].name="passwd";	com[26].func=&dopasswd;
+	com[27].name="phone";	com[27].func=&dophone;
+	com[28].name="priv";	com[28].func=&dopriv;
+	com[29].name="prof";	com[29].func=&doprof;
+	com[30].name="prompt";	com[30].func=&doprompt;
+	com[31].name="quit";	com[31].func=&doquit;
+	com[32].name="reboot";	com[32].func=&doreboot;
+	com[33].name="rm";	com[33].func=&dorm;
+	com[34].name="setmotd";	com[34].func=&dosetmotd;
+	com[35].name="stat";	com[35].func=&dostat;
+	com[36].name="stty";	com[36].func=&dostty;
+	com[37].name="su";	com[37].func=&dosu;
+	com[38].name="tos";	com[38].func=&dotos;
+	com[39].name="touch";	com[39].func=&dotouch;
+	com[40].name="u";	com[40].func=&dou;
+	com[41].name="un";	com[41].func=&doun;
+	com[42].name="what";	com[42].func=&dowhat;
+	com[43].name="when";	com[43].func=&dowhen;
+	com[44].name="where";	com[44].func=&dowhere;
+	com[45].name="who";	com[45].func=&dowho;
+	com[46].name="wmi";	com[46].func=&dowmi;
+	com[47].name="cu";	com[47].func=&docu;
+
+/* now the date data */
+
+	initw(days,"0,3,3,6,1,4,6,2,5,0,3,5");
+
+	dow[ 0]="Sun ";
+	dow[ 1]="Mon ";
+	dow[ 2]="Tue ";
+	dow[ 3]="Wed ";
+	dow[ 4]="Thu ";
+	dow[ 5]="Fri ";
+	dow[ 6]="Sat ";
+
+	moy[ 0]="Jan ";
+	moy[ 1]="Feb ";
+	moy[ 2]="Mar ";
+	moy[ 3]="Apr ";
+	moy[ 4]="May ";
+	moy[ 5]="Jun ";
+	moy[ 6]="Jul ";
+	moy[ 7]="Aug ";
+	moy[ 8]="Sep ";
+	moy[ 9]="Oct ";
+	moy[10]="Nov ";
+	moy[11]="Dec ";
+
+/* now stat  stuff */
+
+	instat[ 0]=&ls;
+	instat[ 1]=&nu;
+	instat[ 2]=&sn;
+	instat[ 3]=&elog;
+	instat[ 4]=&uid;
+	instat[ 5]=&filnum;
+	instat[ 6]=&inl;
+	instat[ 7]=&hon;
+	instat[ 8]=&mon;
+	instat[ 9]=&son;
+	instat[10]=&term;
+
+	cbuft=cbufb=0;
+
+	sttyops[ 0].sname="lower";	sttyops[ 0].pfunc=&sfix;	sttyops[ 0].aux.bits=CASE;
+	sttyops[ 1].sname="crt";	sttyops[ 1].pfunc=&sfix;	sttyops[ 1].aux.bits=CRT;
+	sttyops[ 2].sname="cr";		sttyops[ 2].pfunc=&sfix;	sttyops[ 2].aux.bits=NCR;
+	sttyops[ 3].sname="echo";	sttyops[ 3].pfunc=&sfix;	sttyops[ 3].aux.bits=ECHO;
+	sttyops[ 4].sname="lf";		sttyops[ 4].pfunc=&sfix;	sttyops[ 4].aux.bits=NLF;
+	sttyops[ 5].sname="tabs";	sttyops[ 5].pfunc=&sfix;	sttyops[ 5].aux.bits=TABS;
+	sttyops[ 6].sname="eof";	sttyops[ 6].pfunc=&schr;	sttyops[ 6].aux.scitem=&tty.eofc;
+	sttyops[ 7].sname="erase";	sttyops[ 7].pfunc=&schr;	sttyops[ 7].aux.scitem=&tty.erase;
+	sttyops[ 8].sname="force";	sttyops[ 8].pfunc=&schr;	sttyops[ 8].aux.scitem=&tty.force;
+	sttyops[ 9].sname="intr";	sttyops[ 9].pfunc=&schr;	sttyops[ 9].aux.scitem=&tty.intrc;
+	sttyops[10].sname="kill";	sttyops[10].pfunc=&schr;	sttyops[10].aux.scitem=&tty.killc;
+	sttyops[11].sname="quit";	sttyops[11].pfunc=&schr;	sttyops[11].aux.scitem=&tty.quitc;
+	sttyops[12].sname="retype";	sttyops[12].pfunc=&schr;	sttyops[12].aux.scitem=&tty.retype;
+	sttyops[13].sname="start";	sttyops[13].pfunc=&schr;	sttyops[13].aux.scitem=&tty.startc;
+	sttyops[14].sname="stop";	sttyops[14].pfunc=&schr;	sttyops[14].aux.scitem=&tty.stopc;
+	sttyops[15].sname="wordd";	sttyops[15].pfunc=&schr;	sttyops[15].aux.scitem=&tty.wordd;
+	sttyops[16].sname="cols";	sttyops[16].pfunc=&sint;	sttyops[16].aux.sitem=&tty.ncols;
+	sttyops[17].sname="lines";	sttyops[17].pfunc=&sint;	sttyops[17].aux.sitem=&tty.nlins;
+	sttyops[18].sname="dca";	sttyops[18].pfunc=&sint;	sttyops[18].aux.sitem=&tcap.dca;
+	sttyops[19].sname="cup";	sttyops[19].pfunc=&sstr;	sttyops[19].aux.ssitem=&tcap.cup;
+	sttyops[20].sname="cdown";	sttyops[20].pfunc=&sstr;	sttyops[20].aux.ssitem=&tcap.cdown;
+	sttyops[21].sname="cright";	sttyops[21].pfunc=&sstr;	sttyops[21].aux.ssitem=&tcap.cright;
+	sttyops[22].sname="cleft";	sttyops[22].pfunc=&sstr;	sttyops[22].aux.ssitem=&tcap.cleft;
+	sttyops[23].sname="home";	sttyops[23].pfunc=&sstr;	sttyops[23].aux.ssitem=&tcap.home;
+	sttyops[24].sname="clear";	sttyops[24].pfunc=&sstr;	sttyops[24].aux.ssitem=&tcap.clear;
+	sttyops[25].sname="cteol";	sttyops[25].pfunc=&sstr;	sttyops[25].aux.ssitem=&tcap.cteol;
+	sttyops[26].sname="cteos";	sttyops[26].pfunc=&sstr;	sttyops[26].aux.ssitem=&tcap.cteos;
+	sttyops[27].sname="insc";	sttyops[27].pfunc=&sstr;	sttyops[27].aux.ssitem=&tcap.insc;
+	sttyops[28].sname="insl";	sttyops[28].pfunc=&sstr;	sttyops[28].aux.ssitem=&tcap.insl;
+	sttyops[29].sname="delc";	sttyops[29].pfunc=&sstr;	sttyops[29].aux.ssitem=&tcap.delc;
+	sttyops[30].sname="dell";	sttyops[30].pfunc=&sstr;	sttyops[30].aux.ssitem=&tcap.dell;
+	sttyops[31].sname="dlin";	sttyops[31].pfunc=&sstr;	sttyops[31].aux.ssitem=&tcap.dlin;
+	sttyops[32].sname="dsep";	sttyops[32].pfunc=&sstr;	sttyops[32].aux.ssitem=&tcap.dsep;
+	sttyops[33].sname="dlout";	sttyops[33].pfunc=&sstr;	sttyops[33].aux.ssitem=&tcap.dlout;
+	sttyops[34].sname="up";		sttyops[34].pfunc=&sstr;	sttyops[34].aux.ssitem=&tcap.up;
+	sttyops[35].sname="down";	sttyops[35].pfunc=&sstr;	sttyops[35].aux.ssitem=&tcap.down;
+	sttyops[36].sname="right";	sttyops[36].pfunc=&sstr;	sttyops[36].aux.ssitem=&tcap.right;
+	sttyops[37].sname="left";	sttyops[37].pfunc=&sstr;	sttyops[37].aux.ssitem=&tcap.left;
+	sttyops[38].sname="blk";	sttyops[38].pfunc=&sstr;	sttyops[38].aux.ssitem=&tcap.blk;
+	sttyops[39].sname="bell";	sttyops[39].pfunc=&sstr;	sttyops[39].aux.ssitem=&tcap.bell;
+	sttyops[40].sname="inson";	sttyops[40].pfunc=&sstr;	sttyops[40].aux.ssitem=&tcap.inson;
+	sttyops[41].sname="insoff";	sttyops[41].pfunc=&sstr;	sttyops[41].aux.ssitem=&tcap.insoff;
+	sttyops[42].sname="rvon";	sttyops[42].pfunc=&sstr;	sttyops[42].aux.ssitem=&tcap.rvon;
+	sttyops[43].sname="rvoff";	sttyops[43].pfunc=&sstr;	sttyops[43].aux.ssitem=&tcap.rvoff;
+
+	allocc=0;
+	flnmb="B:000.BBS";
+
+

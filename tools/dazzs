@@ -1,0 +1,14 @@
+#!/bin/sh
+
+cd ~/jok/z80pack/z80pack-1.38-DEV/cromemcosim
+
+rm -f disks/drivea.dsk
+rm -f disks/driveb.dsk
+rm -f disks/drivec.dsk
+rm -f disks/drived.dsk
+ln disks/library/cdos258_8.dsk disks/drivea.dsk
+ln disks/library/dazzler_graphics.dsk disks/driveb.dsk
+ln disks/library/dazzler_stuff.dsk disks/drivec.dsk
+ln disks/library/jok.dsk disks/drived.dsk
+
+./cromemcosim -f 4 -x rdos0312.hex $*

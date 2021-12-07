@@ -1,0 +1,15 @@
+echo flip switch 4
+# cpmrm ../z80pack/z80pack-1.36/cromemcosim/disks/drived.dsk $1.z80
+# cpmcp ../z80pack/z80pack-1.36/cromemcosim/disks/drived.dsk $1.z80 0:
+#cpmrm ../z80pack/z80pack-1.36/cromemcosim/disks/drived.dsk pacman.z80
+#cpmcp ../z80pack/z80pack-1.36/cromemcosim/disks/drived.dsk pacman.z80 0:
+# cpmrm ../z80pack/z80pack-1.36/cromemcosim/disks/drived.dsk spaceinv.com
+# cpmcp ../z80pack/z80pack-1.36/cromemcosim/disks/drived.dsk spaceinv.com 0:
+cpmrm ../z80pack/z80pack-1.36/cromemcosim/disks/drived.dsk missile.com
+cpmcp ../z80pack/z80pack-1.36/cromemcosim/disks/drived.dsk missile.com 0:
+# cpmrm ../z80pack/z80pack-1.36/cromemcosim/disks/drived.dsk bitblit.com
+# cpmcp ../z80pack/z80pack-1.36/cromemcosim/disks/drived.dsk bitblit.com 0:
+# cpmrm ../z80pack/z80pack-1.36/cromemcosim/disks/drived.dsk hello.com
+# cpmcp ../z80pack/z80pack-1.36/cromemcosim/disks/drived.dsk hello.com 0:
+cd ~/jok/z80pack/z80pack-1.36/cromemcosim
+./asm

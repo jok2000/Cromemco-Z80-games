@@ -1,0 +1,6 @@
+cpmrm ../z80pack/z80pack-1.36/cromemcosim/disks/drived.dsk laser.for
+cpmcp ../z80pack/z80pack-1.36/cromemcosim/disks/drived.dsk laser.for 0:
+cpmrm ../z80pack/z80pack-1.36/cromemcosim/disks/drived.dsk breakout.for
+cpmcp ../z80pack/z80pack-1.36/cromemcosim/disks/drived.dsk breakout.for 0:
+cd ~/jok/z80pack/z80pack-1.36/cromemcosim
+./dazz
